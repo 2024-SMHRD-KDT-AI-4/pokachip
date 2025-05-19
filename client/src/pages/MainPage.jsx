@@ -1,5 +1,6 @@
 import Header from "../components/Header";
 import FooterNav from "../components/FooterNav";
+import PhotoMap from "./PhotoMap"; // ✅ PhotoMap 불러오기
 
 function MainPage() {
   return (
@@ -23,12 +24,10 @@ function MainPage() {
           </div>
         </section>
 
-        {/* 여행 지도 */}
+        {/* 여행 지도 (PhotoMap 직접 삽입) */}
         <section>
           <h2 className="text-lg font-semibold mb-4">여행 지도</h2>
-          <div className="w-full h-64 bg-gray-200 rounded shadow flex items-center justify-center">
-            <p className="text-gray-500">🗺️ 지도 영역 (나중에 지도 API 연결)</p>
-          </div>
+          <PhotoMap /> {/* ✅ 지도 업로드 기능 바로 출력 */}
         </section>
       </main>
 
