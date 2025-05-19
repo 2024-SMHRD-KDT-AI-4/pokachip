@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import EXIF from "exif-js";
+import * as exifr from "exifr"; // ✅ exifr로 대체
 
 // ✅ Google Maps API 스크립트 로딩
 const loadGoogleMapsScript = (callback) => {
@@ -47,28 +47,23 @@ const PhotoMap = () => {
     });
   }, []);
 
-  const convertDMSToDD = (dms, ref) => {
-    if (!dms) return null;
-    const [d, m, s] = dms;
-    let dd = d + m / 60 + s / 3600;
-    if (ref === "S" || ref === "W") dd *= -1;
-    return dd;
-  };
-
-  const extractGPS = (file, callback) => {
-    const reader = new FileReader();
-    reader.onload = function (e) {
-      const img = new Image();
-      img.onload = () => {
-        EXIF.getData(img, function () {
-          const lat = convertDMSToDD(EXIF.getTag(this, "GPSLatitude"), EXIF.getTag(this, "GPSLatitudeRef"));
-          const lng = convertDMSToDD(EXIF.getTag(this, "GPSLongitude"), EXIF.getTag(this, "GPSLongitudeRef"));
-          callback({ lat, lng, imageUrl: img.src });
-        });
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
+  // ✅ EXIF에서 GPS 추출 (exifr 사용)
+  const extractGPS = async (file, callback) => {
+    try {
+      const gpsData = await exifr.gps(file); // exifr.gps는 {latitude, longitude} 반환
+      if (!gpsData || !gpsData.latitude || !gpsData.longitude) {
+        callback({ lat: null, lng: null, imageUrl: URL.createObjectURL(file) });
+        return;
+      }
+      callback({
+        lat: gpsData.latitude,
+        lng: gpsData.longitude,
+        imageUrl: URL.createObjectURL(file),
+      });
+    } catch (error) {
+      console.error("EXIF 추출 실패:", error);
+      callback({ lat: null, lng: null, imageUrl: URL.createObjectURL(file) });
+    }
   };
 
   const handleFilesChange = (e) => {
