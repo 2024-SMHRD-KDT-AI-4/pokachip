@@ -34,6 +34,7 @@ return (
 
         {/* 회원가입 안내 */}
         <div className="text-center mt-4">
+          <p className="text-sm text-gray-600">이미 계정이 있으신가요?</p>
           <button
             onClick={() => navigate('/register')}
             className="text-sm text-blue-600 font-semibold hover:underline mt-1"
