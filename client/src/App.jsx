@@ -3,6 +3,7 @@ import Header from './components/Header';
 import FooterNav from './components/FooterNav';
 import MainPage from './pages/MainPage';
 import PhotoMap from './pages/PhotoMap';
+import DiaryCreate from "./components/DiaryCreate"; 
 
 function App() {
   const [view, setView] = useState("main");
