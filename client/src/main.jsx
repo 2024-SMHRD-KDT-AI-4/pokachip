@@ -4,6 +4,7 @@ import MainPage from './pages/MainPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import RegisterPage from './pages/RegisterPage';
 import DiaryCreate from './pages/DiaryCreate.jsx';
+// import './App.css';
 import './index.css';
 
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
