@@ -50,7 +50,7 @@ function PhotoMap() {
         taken_at: new Date().toISOString(),
       });
 
-      fetch("/uploadPhoto", {
+      fetch("http://localhost:5000/uploadPhoto", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -68,7 +68,6 @@ function PhotoMap() {
         .catch((err) => {
           console.error("❌ fetch 실패:", err);
         });
-
     } catch (error) {
       console.error("❌ EXIF 추출 실패:", error);
       callback({
@@ -119,8 +118,16 @@ function PhotoMap() {
 
   return (
     <div>
-      <input type="file" accept="image/*" multiple onChange={handleFilesChange} />
-      <div ref={mapRef} style={{ width: "100%", height: "600px", marginTop: "10px" }} />
+      <input
+        type="file"
+        accept="image/*"
+        multiple
+        onChange={handleFilesChange}
+      />
+      <div
+        ref={mapRef}
+        style={{ width: "100%", height: "600px", marginTop: "10px" }}
+      />
     </div>
   );
 }
