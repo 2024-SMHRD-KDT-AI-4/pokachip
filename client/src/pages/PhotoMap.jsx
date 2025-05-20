@@ -1,68 +1,81 @@
 import React, { useEffect, useRef, useState } from "react";
-import * as exifr from "exifr"; // ✅ exifr로 대체
+import * as exifr from "exifr";
 
-// ✅ Google Maps API 스크립트 로딩
+// Google Maps API 로딩
 const loadGoogleMapsScript = (callback) => {
   const scriptId = "google-maps-script";
-  const existingScript = document.getElementById(scriptId);
-
-  if (!existingScript) {
-    const script = document.createElement("script");
-    script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyCoV7zBzHTvU9JWMAxrLXzG_s0_FfDcxGo`;
-    script.async = true;
-    script.defer = true;
-    script.onload = callback;
-    script.id = scriptId;
-    document.body.appendChild(script);
-  } else {
-    if (window.google && window.google.maps) {
-      callback();
-    } else {
-      existingScript.addEventListener("load", callback);
-    }
+  if (document.getElementById(scriptId)) {
+    callback();
+    return;
   }
+
+  const script = document.createElement("script");
+  script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyDWQsyvCTLoek2LGOdXImWra7OvChrMya8`;
+  script.async = true;
+  script.defer = true;
+  script.onload = callback;
+  script.id = scriptId;
+  document.body.appendChild(script);
 };
 
-const PhotoMap = () => {
+function PhotoMap() {
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
   const [isMapReady, setIsMapReady] = useState(false);
 
-  // ✅ 모달 상태
-  const [modalMessage, setModalMessage] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-  useEffect(() => {
-    loadGoogleMapsScript(() => {
-      if (mapRef.current && window.google && window.google.maps) {
-        mapInstance.current = new window.google.maps.Map(mapRef.current, {
-          center: { lat: 36.5, lng: 127.5 },
-          zoom: 7,
-          gestureHandling: "greedy",
-        });
-        setIsMapReady(true);
-      } else {
-        console.error("❌ Google Maps 또는 mapRef 로딩 실패");
-      }
-    });
-  }, []);
-
-  // ✅ EXIF에서 GPS 추출 (exifr 사용)
   const extractGPS = async (file, callback) => {
     try {
-      const gpsData = await exifr.gps(file); // exifr.gps는 {latitude, longitude} 반환
-      if (!gpsData || !gpsData.latitude || !gpsData.longitude) {
-        callback({ lat: null, lng: null, imageUrl: URL.createObjectURL(file) });
+      console.log("📂 파일 선택됨:", file.name);
+      const gpsData = await exifr.gps(file);
+      console.log("🧭 추출된 GPS 데이터:", gpsData);
+
+      const result = {
+        lat: gpsData?.latitude || null,
+        lng: gpsData?.longitude || null,
+        imageUrl: URL.createObjectURL(file),
+      };
+
+      callback(result);
+
+      if (!result.lat || !result.lng) {
+        console.warn("❗ GPS 없음 → fetch 실행 안 됨");
         return;
       }
+
+      console.log("📤 fetch 실행됨! 전송 내용:", {
+        user_id: "user_id_1",
+        file_name: file.name,
+        lat: result.lat,
+        lng: result.lng,
+        taken_at: new Date().toISOString(),
+      });
+
+      fetch("/uploadPhoto", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: "user_id_1",
+          file_name: file.name,
+          lat: result.lat,
+          lng: result.lng,
+          taken_at: new Date().toISOString(),
+        }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          console.log("✅ 서버 응답:", data);
+        })
+        .catch((err) => {
+          console.error("❌ fetch 실패:", err);
+        });
+
+    } catch (error) {
+      console.error("❌ EXIF 추출 실패:", error);
       callback({
-        lat: gpsData.latitude,
-        lng: gpsData.longitude,
+        lat: null,
+        lng: null,
         imageUrl: URL.createObjectURL(file),
       });
-    } catch (error) {
-      console.error("EXIF 추출 실패:", error);
-      callback({ lat: null, lng: null, imageUrl: URL.createObjectURL(file) });
     }
   };
 
@@ -72,11 +85,7 @@ const PhotoMap = () => {
 
     files.forEach((file) => {
       extractGPS(file, ({ lat, lng, imageUrl }) => {
-        if (!lat || !lng) {
-          setModalMessage(`❗ [${file.name}]에는 위치 정보(EXIF GPS)가 없습니다.\n이 이미지는 지도에 표시되지 않습니다.`);
-          setIsModalOpen(true);
-          return;
-        }
+        if (!lat || !lng) return;
 
         const marker = new window.google.maps.Marker({
           position: { lat, lng },
@@ -96,45 +105,24 @@ const PhotoMap = () => {
     });
   };
 
+  useEffect(() => {
+    loadGoogleMapsScript(() => {
+      if (mapRef.current && window.google && window.google.maps) {
+        mapInstance.current = new window.google.maps.Map(mapRef.current, {
+          center: { lat: 36.5, lng: 127.5 },
+          zoom: 7,
+        });
+        setIsMapReady(true);
+      }
+    });
+  }, []);
+
   return (
     <div>
       <input type="file" accept="image/*" multiple onChange={handleFilesChange} />
       <div ref={mapRef} style={{ width: "100%", height: "600px", marginTop: "10px" }} />
-
-      {/* ✅ 모달 */}
-      {isModalOpen && (
-        <div style={modalOverlayStyle}>
-          <div style={modalContentStyle}>
-            <p>{modalMessage}</p>
-            <button onClick={() => setIsModalOpen(false)}>확인</button>
-          </div>
-        </div>
-      )}
     </div>
   );
-};
+}
 
 export default PhotoMap;
-
-// ✅ 간단한 모달 스타일
-const modalOverlayStyle = {
-  position: "fixed",
-  top: 0,
-  left: 0,
-  width: "100vw",
-  height: "100vh",
-  backgroundColor: "rgba(0, 0, 0, 0.4)",
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-  zIndex: 1000,
-};
-
-const modalContentStyle = {
-  backgroundColor: "white",
-  padding: "20px 30px",
-  borderRadius: "8px",
-  textAlign: "center",
-  maxWidth: "90%",
-  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)",
-};

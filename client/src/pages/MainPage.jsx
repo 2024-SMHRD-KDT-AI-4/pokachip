@@ -2,6 +2,7 @@ import Header from "../components/Header";
 import FooterNav from "../components/FooterNav";
 import PhotoMap from "./PhotoMap"; // ✅ PhotoMap 불러오기
 
+
 function MainPage() {
   return (
     <div className="flex flex-col h-screen overflow-hidden">
