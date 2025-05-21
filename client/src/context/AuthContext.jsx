@@ -9,16 +9,28 @@ export function AuthProvider({ children }) {
 
   const [user, setUser] = useState(() => {
     const storedUser = localStorage.getItem("user");
-    return storedUser ? JSON.parse(storedUser) : null;
+    try {
+      return storedUser ? JSON.parse(storedUser) : null;
+    } catch {
+      return null;
+    }
   });
 
-  // ✅ 로그인 함수 (기존 그대로 유지)
   const login = (token, userInfo) => {
     console.log("✅ login() 호출됨");
     console.log("👉 userInfo:", userInfo);
+
+    // ✅ 유효성 체크
+    if (!userInfo || !userInfo.user_id || !userInfo.user_name) {
+      console.error("❌ 유효하지 않은 사용자 정보입니다:", userInfo);
+      return;
+    }
+
+    const userJson = JSON.stringify(userInfo);
     localStorage.setItem("token", token);
-    localStorage.setItem("user", JSON.stringify(userInfo));
-    sessionStorage.setItem("user", JSON.stringify(userInfo)); // 필수
+    localStorage.setItem("user", userJson);
+    sessionStorage.setItem("user", userJson);
+
     setIsLoggedIn(true);
     setUser(userInfo);
   };
@@ -36,15 +48,22 @@ export function AuthProvider({ children }) {
     const sessionUser = sessionStorage.getItem("user");
     const localUser = localStorage.getItem("user");
 
-    // 세션 없고 로컬에 있을 경우 복원
     if (!sessionUser && localUser) {
       sessionStorage.setItem("user", localUser);
     }
 
-    // user 상태가 비어 있으면 localUser로 복원
     if (!user && localUser) {
-      setUser(JSON.parse(localUser));
-      setIsLoggedIn(true);
+      try {
+        const parsed = JSON.parse(localUser);
+        if (parsed.user_id && parsed.user_name) {
+          setUser(parsed);
+          setIsLoggedIn(true);
+        } else {
+          console.warn("⚠️ user 구조가 이상함:", parsed);
+        }
+      } catch (err) {
+        console.error("❌ user 파싱 실패:", err);
+      }
     }
   }, [user]);
 
