@@ -2,7 +2,6 @@ const express = require("express");
 const router = express.Router();
 const db = require("../db");
 
-// ✅ 사진 업로드 → DB 저장 + 콘솔 로그
 router.post("/uploadPhoto", async (req, res) => {
   console.log("🚀 [백엔드 수신] /uploadPhoto 요청 도착");
 
@@ -16,21 +15,22 @@ router.post("/uploadPhoto", async (req, res) => {
     taken_at,
   });
 
+  // ❗ 방어 코드 추가
+  if (!user_id || !file_name || !lat || !lng || !taken_at) {
+    return res.status(400).json({ message: "필수 데이터 누락" });
+  }
+
   const sql = `
-  INSERT INTO photo_info (user_id, file_name, exif_loc, taken_at, tags)
-  VALUES (?, ?, ?, ?, ?)
-`;
+    INSERT INTO photo_info (user_id, file_name, exif_loc, taken_at, tags)
+    VALUES (?, ?, ?, ?, ?)
+  `;
 
   const location = `위도:${lat}, 경도:${lng}`;
 
-// ✅ 한국 시간 기준으로 변환
-const date = new Date(taken_at);
-
-// UTC+9로 보정
-date.setHours(date.getHours() + 9);
-
-const taken_at_mysql = date.toISOString().slice(0, 19).replace("T", " ");
-
+  // ✅ 한국 시간 기준 보정
+  const date = new Date(taken_at);
+  date.setHours(date.getHours() + 9);
+  const taken_at_mysql = date.toISOString().slice(0, 19).replace("T", " ");
 
   try {
     await db.execute(sql, [

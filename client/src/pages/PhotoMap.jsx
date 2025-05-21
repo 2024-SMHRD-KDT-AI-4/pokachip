@@ -42,24 +42,37 @@ function PhotoMap() {
         return;
       }
 
-      console.log("📤 fetch 실행됨! 전송 내용:", {
-        user_id: "user_id_1",
+      // ✅ 로그인 유저 정보 가져오기 (session → local 순)
+      const userData =
+        sessionStorage.getItem("user") || localStorage.getItem("user");
+
+      if (!userData) {
+        alert("로그인 정보가 없습니다.");
+        return;
+      }
+
+      const user = JSON.parse(userData);
+      const userId = user?.user_id;
+
+      if (!userId) {
+        alert("user_id가 없습니다.");
+        return;
+      }
+
+      const uploadData = {
+        user_id: userId,
         file_name: file.name,
         lat: result.lat,
         lng: result.lng,
         taken_at: new Date().toISOString(),
-      });
+      };
+
+      console.log("📤 fetch 실행됨! 전송 내용:", uploadData);
 
       fetch("http://localhost:5000/uploadPhoto", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          user_id: "user_id_1",
-          file_name: file.name,
-          lat: result.lat,
-          lng: result.lng,
-          taken_at: new Date().toISOString(),
-        }),
+        body: JSON.stringify(uploadData),
       })
         .then((res) => res.json())
         .then((data) => {
@@ -90,8 +103,8 @@ function PhotoMap() {
           position: { lat, lng },
           map: mapInstance.current,
           icon: {
-            url: "/icon-map-marker-1.png", // public 폴더에 저장된 커스텀 마커 이미지
-            scaledSize: new window.google.maps.Size(40, 40), // 크기 설정
+            url: "/icon-map-marker-1.png",
+            scaledSize: new window.google.maps.Size(40, 40),
           },
         });
 

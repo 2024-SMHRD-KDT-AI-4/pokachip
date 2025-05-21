@@ -8,6 +8,20 @@ import './index.css';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext'; // ✅ 추가
 
+function RestoreSession() {
+  useEffect(() => {
+    const sessionUser = sessionStorage.getItem("user");
+    const localUser = localStorage.getItem("user");
+
+    if (!sessionUser && localUser) {
+      sessionStorage.setItem("user", localUser); // 🔁 자동 복원
+      console.log("🔁 sessionStorage 복구 완료");
+    }
+  }, []);
+
+  return null;
+}
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>

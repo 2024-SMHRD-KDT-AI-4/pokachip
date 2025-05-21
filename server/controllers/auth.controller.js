@@ -11,10 +11,14 @@ exports.loginSocial = async (req, res) => {
   }
 
   try {
-    const [rows] = await db.query("SELECT * FROM user_info WHERE user_id = ?", [user_id]);
+    const [rows] = await db.query("SELECT * FROM user_info WHERE user_id = ?", [
+      user_id,
+    ]);
 
     if (rows.length === 0) {
-      return res.status(404).json({ error: "회원이 아닙니다. 회원가입을 진행해주세요." });
+      return res
+        .status(404)
+        .json({ error: "회원이 아닙니다. 회원가입을 진행해주세요." });
     }
 
     const token = jwt.sign({ id: user_id }, SECRET_KEY, { expiresIn: "7d" });
@@ -24,11 +28,12 @@ exports.loginSocial = async (req, res) => {
       message: "로그인 성공",
       token,
       user: {
-        name: rows[0].user_name,
-        email: rows[0].user_id,
+        user_id: rows[0].user_id, // ✅ 이메일 → user_id
+        user_name: rows[0].user_name, // ✅ 이름 → user_name
         social_type: rows[0].social_type,
       },
     });
+    
   } catch (err) {
     console.error("로그인 오류:", err);
     res.status(500).json({ error: "서버 오류" });
@@ -39,14 +44,21 @@ exports.loginSocial = async (req, res) => {
 exports.registerSocial = async (req, res) => {
   const { user_id, user_name, social_type, access_token } = req.body;
 
-  console.log("🔐 회원가입 요청값:", { user_id, user_name, social_type, access_token });
+  console.log("🔐 회원가입 요청값:", {
+    user_id,
+    user_name,
+    social_type,
+    access_token,
+  });
 
   if (!user_id || !user_name || !social_type || !access_token) {
     return res.status(400).json({ error: "필수 정보 누락" });
   }
 
   try {
-    const [rows] = await db.query("SELECT * FROM user_info WHERE user_id = ?", [user_id]);
+    const [rows] = await db.query("SELECT * FROM user_info WHERE user_id = ?", [
+      user_id,
+    ]);
     if (rows.length > 0) {
       return res.status(409).json({ error: "이미 가입된 이메일입니다." });
     }
