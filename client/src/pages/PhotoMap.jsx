@@ -89,6 +89,10 @@ function PhotoMap() {
         const marker = new window.google.maps.Marker({
           position: { lat, lng },
           map: mapInstance.current,
+          icon: {
+            url: "/icon-map-marker-1.png", // public 폴더에 저장된 커스텀 마커 이미지
+            scaledSize: new window.google.maps.Size(40, 40), // 크기 설정
+          },
         });
 
         const infoWindow = new window.google.maps.InfoWindow({
