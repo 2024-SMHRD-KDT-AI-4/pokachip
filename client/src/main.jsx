@@ -1,23 +1,26 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
-import App from './App';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
+import App from './App';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import DiaryCreate from './pages/DiaryCreate';
+import PhotoMap from './pages/PhotoMap'; // /map에 대응할 페이지
 
-import { AuthProvider } from './context/AuthContext'; // ✅ 추가
+import { AuthProvider } from './context/AuthContext';
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(
+ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <AuthProvider> {/* ✅ context로 감싸줘야 useAuth()가 동작 */}
+    <AuthProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/*" element={<App />} />
+          <Route path="/" element={<App />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/diarycreate" element={<DiaryCreate />} /> {/* ✅ 추가 */}
+          <Route path="/map" element={<PhotoMap />} />             {/* ✅ 추가 */}
         </Routes>
       </BrowserRouter>
     </AuthProvider>
