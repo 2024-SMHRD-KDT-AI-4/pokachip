@@ -3,7 +3,7 @@ import Header from './components/Header';
 import FooterNav from './components/FooterNav';
 import MainPage from './pages/MainPage';
 import PhotoMap from './pages/PhotoMap';
-import DiaryCreate from "./components/DiaryCreate"; 
+import DiaryCreate from "./components/DiaryCreate";
 
 function App() {
   const [view, setView] = useState("main");
@@ -14,6 +14,8 @@ function App() {
       <main className="flex-1 overflow-y-auto">
         {view === "main" ? (
           <MainPage setView={setView} />
+        ) : view === "create" ? (
+          <DiaryCreate setView={setView} />
         ) : (
           <div>
             <button
@@ -26,7 +28,7 @@ function App() {
           </div>
         )}
       </main>
-      <FooterNav />
+      <FooterNav setView={setView} />
     </div>
   );
 }
