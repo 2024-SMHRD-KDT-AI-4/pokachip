@@ -23,11 +23,14 @@ router.post("/uploadPhoto", async (req, res) => {
 
   const location = `위도:${lat}, 경도:${lng}`;
 
-  // ✅ MySQL DATETIME 형식으로 변환
-  const taken_at_mysql = new Date(taken_at)
-    .toISOString()
-    .slice(0, 19)
-    .replace("T", " ");
+// ✅ 한국 시간 기준으로 변환
+const date = new Date(taken_at);
+
+// UTC+9로 보정
+date.setHours(date.getHours() + 9);
+
+const taken_at_mysql = date.toISOString().slice(0, 19).replace("T", " ");
+
 
   try {
     await db.execute(sql, [
