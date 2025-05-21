@@ -23,9 +23,7 @@ const loginToBackend = async (userInfo, login, navigate, setError) => {
     console.log("백엔드 응답:", res.data);
 
     if (res.data.token) {
-      login(res.data.token);
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("user", JSON.stringify(res.data.user));
+      login(res.data.token, res.data.user); // ✅ 수정된 부분
       navigate("/");
     }
   } catch (err) {
@@ -74,11 +72,11 @@ function LoginPageInner() {
   const kakaoLogin = () => {
     if (!window.Kakao) return setError("카카오 SDK 로드 실패");
 
-    const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent); // ✅ 모바일 감지
+    const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
 
     window.Kakao.Auth.login({
       scope: "profile_nickname, account_email",
-      throughTalk: isMobile, // ✅ 모바일일 경우에만 앱 실행 시도
+      throughTalk: isMobile,
       success: async () => {
         try {
           const res = await window.Kakao.API.request({ url: "/v2/user/me" });
