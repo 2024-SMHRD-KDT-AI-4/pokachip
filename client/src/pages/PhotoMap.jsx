@@ -46,14 +46,20 @@ function PhotoMap() {
       const userData =
         sessionStorage.getItem("user") || localStorage.getItem("user");
 
-      if (!userData) {
+      if (!userData || userData === "undefined") {
         alert("로그인 정보가 없습니다.");
         return;
       }
 
-      const user = JSON.parse(userData);
-      const userId = user?.user_id;
+      let user;
+      try {
+        user = JSON.parse(userData);
+      } catch (err) {
+        console.error("❌ JSON 파싱 실패:", err);
+        return;
+      }
 
+      const userId = user?.user_id;
       if (!userId) {
         alert("user_id가 없습니다.");
         return;

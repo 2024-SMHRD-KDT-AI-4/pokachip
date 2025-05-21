@@ -5,6 +5,7 @@ function Header() {
   const navigate = useNavigate();
   const { isLoggedIn, logout, user } = useAuth();
   console.log("🧾 Header 렌더링됨, user:", user);
+
   const handleLogout = () => {
     logout();
     navigate('/');
@@ -19,7 +20,7 @@ function Header() {
           {isLoggedIn ? (
             <>
               <span className="text-sm text-gray-700">
-                {user?.name || '사용자'}님
+                {user?.user_name || '사용자'}님
               </span>
               <button
                 onClick={handleLogout}
