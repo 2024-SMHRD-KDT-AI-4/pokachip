@@ -21,7 +21,9 @@ exports.loginSocial = async (req, res) => {
         .json({ error: "회원이 아닙니다. 회원가입을 진행해주세요." });
     }
 
-    const token = jwt.sign({ id: user_id }, SECRET_KEY, { expiresIn: "7d" });
+    const token = jwt.sign({ user_id: rows[0].user_id }, SECRET_KEY, {
+      expiresIn: "7d",
+    });
 
     // ✅ 프론트에 필요한 정보만 깔끔하게 정리해서 전달
     return res.json({
@@ -33,7 +35,6 @@ exports.loginSocial = async (req, res) => {
         social_type: rows[0].social_type,
       },
     });
-    
   } catch (err) {
     console.error("로그인 오류:", err);
     res.status(500).json({ error: "서버 오류" });

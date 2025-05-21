@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as exifr from "exifr";
 
-// Google Maps API 로딩
 const loadGoogleMapsScript = (callback) => {
   const scriptId = "google-maps-script";
   if (document.getElementById(scriptId)) {
@@ -42,31 +41,13 @@ function PhotoMap() {
         return;
       }
 
-      // ✅ 로그인 유저 정보 가져오기 (session → local 순)
-      const userData =
-        sessionStorage.getItem("user") || localStorage.getItem("user");
-
-      if (!userData || userData === "undefined") {
-        alert("로그인 정보가 없습니다.");
-        return;
-      }
-
-      let user;
-      try {
-        user = JSON.parse(userData);
-      } catch (err) {
-        console.error("❌ JSON 파싱 실패:", err);
-        return;
-      }
-
-      const userId = user?.user_id;
-      if (!userId) {
-        alert("user_id가 없습니다.");
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("로그인이 필요합니다.");
         return;
       }
 
       const uploadData = {
-        user_id: userId,
         file_name: file.name,
         lat: result.lat,
         lng: result.lng,
@@ -77,7 +58,10 @@ function PhotoMap() {
 
       fetch("http://localhost:5000/uploadPhoto", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
         body: JSON.stringify(uploadData),
       })
         .then((res) => res.json())

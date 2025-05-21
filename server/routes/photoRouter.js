@@ -1,11 +1,12 @@
 const express = require("express");
 const router = express.Router();
 const db = require("../db");
+const authenticateToken = require("../middleware/authenticateToken");
 
-router.post("/uploadPhoto", async (req, res) => {
+router.post("/uploadPhoto", authenticateToken, async (req, res) => {
   console.log("🚀 [백엔드 수신] /uploadPhoto 요청 도착");
-
-  const { user_id, file_name, lat, lng, taken_at } = req.body;
+  const user_id = req.user.user_id; // ✅ 토큰에서 추출
+  const { file_name, lat, lng, taken_at } = req.body;
 
   console.log("📦 요청 본문 데이터:", {
     user_id,
@@ -38,7 +39,7 @@ router.post("/uploadPhoto", async (req, res) => {
       `/uploads/${file_name}`,
       location,
       taken_at_mysql,
-      ""
+      "",
     ]);
 
     console.log("📥 사진 업로드 DB 저장됨:", {

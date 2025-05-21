@@ -1,4 +1,4 @@
-import { useEffect, useState, createContext, useContext } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 
 const AuthContext = createContext();
 
@@ -20,17 +20,13 @@ export function AuthProvider({ children }) {
     console.log("✅ login() 호출됨");
     console.log("👉 userInfo:", userInfo);
 
-    // ✅ 유효성 체크
     if (!userInfo || !userInfo.user_id || !userInfo.user_name) {
       console.error("❌ 유효하지 않은 사용자 정보입니다:", userInfo);
       return;
     }
 
-    const userJson = JSON.stringify(userInfo);
     localStorage.setItem("token", token);
-    localStorage.setItem("user", userJson);
-    sessionStorage.setItem("user", userJson);
-
+    localStorage.setItem("user", JSON.stringify(userInfo));
     setIsLoggedIn(true);
     setUser(userInfo);
   };
@@ -38,34 +34,23 @@ export function AuthProvider({ children }) {
   const logout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    sessionStorage.removeItem("user");
     setIsLoggedIn(false);
     setUser(null);
   };
 
-  // ✅ 새로고침 없이도 user 정보 복원
   useEffect(() => {
-    const sessionUser = sessionStorage.getItem("user");
-    const localUser = localStorage.getItem("user");
+    const storedUser = localStorage.getItem("user");
+    const token = localStorage.getItem("token");
 
-    if (!sessionUser && localUser) {
-      sessionStorage.setItem("user", localUser);
-    }
-
-    if (!user && localUser) {
+    if (token && storedUser) {
       try {
-        const parsed = JSON.parse(localUser);
-        if (parsed.user_id && parsed.user_name) {
-          setUser(parsed);
-          setIsLoggedIn(true);
-        } else {
-          console.warn("⚠️ user 구조가 이상함:", parsed);
-        }
-      } catch (err) {
-        console.error("❌ user 파싱 실패:", err);
+        setUser(JSON.parse(storedUser));
+        setIsLoggedIn(true);
+      } catch {
+        console.warn("⚠️ user 파싱 실패");
       }
     }
-  }, [user]);
+  }, []);
 
   return (
     <AuthContext.Provider value={{ isLoggedIn, login, logout, user }}>
