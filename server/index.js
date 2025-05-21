@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const authRouter = require('./routes/auth.route'); // ✅ 추가
 const path = require("path");
-
 const app = express();
 const PORT = 5000;
 
@@ -25,6 +25,8 @@ app.use(express.static(path.join(__dirname, "../client/dist")));
 app.get("*", (req, res) => {
   res.sendFile(path.resolve(__dirname, "../client/dist/index.html"));
 });
+
+app.use('/api', authRouter); // 🔑 로그인은 /api/login 으로 요청함
 
 // ✅ [6] 요청 로깅
 app.use((req, res, next) => {
