@@ -1,40 +1,46 @@
 const express = require('express');
 const cors = require('cors');
-const authRouter = require('./routes/auth.route'); // ✅ 추가
 const path = require("path");
+
+const authRouter = require('./routes/auth.route');      // 🔑 로그인 관련
+const diaryRoutes = require('./routes/diary.route');    // 📘 일기 관련
+const photoRouter = require('./routes/photoRouter');    // 🗺️ 지도/사진 관련
+
 const app = express();
 const PORT = 5000;
 
-// ✅ [1] 공통 미들웨어 설정
+// ✅ [1] 공통 미들웨어
 app.use(cors());
 app.use(express.json());
 
-// ✅ [2] API 라우트 테스트
-app.get('/api/test', (req, res) => {
-  res.json({ message: 'API 테스트 성공! 🎯' });
-});
-
-// ✅ [3] photoRouter.js 라우터 먼저 등록
-const photoRouter = require("./routes/photoRouter");
-app.use("/", photoRouter); // 반드시 정적파일 서빙 전에 있어야 함
-
-// ✅ [4] 정적 파일 서빙 (React build 결과)
-app.use(express.static(path.join(__dirname, "../client/dist")));
-
-// ✅ [5] 나머지 모든 경로는 React index.html로 처리
-app.get("*", (req, res) => {
-  res.sendFile(path.resolve(__dirname, "../client/dist/index.html"));
-});
-
-app.use('/api', authRouter); // 🔑 로그인은 /api/login 으로 요청함
-
-// ✅ [6] 요청 로깅
+// ✅ [2] 요청 로그
 app.use((req, res, next) => {
   console.log("🛬 요청 받음:", req.method, req.url);
   next();
 });
 
-// ✅ [7] 서버 시작
+// ✅ [3] 업로드된 이미지 공개 설정
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// ✅ [4] API 테스트 (필요시만 유지)
+app.get('/api/test', (req, res) => {
+  res.json({ message: 'API 테스트 성공! 🎯' });
+});
+
+// ✅ [5] API 라우터 등록
+app.use('/api/diary', diaryRoutes);
+app.use('/api', authRouter);
+app.use("/", photoRouter);
+
+// ✅ [6] 프론트엔드 정적 파일 서빙
+app.use(express.static(path.join(__dirname, "../client/dist")));
+
+// ✅ [7] SPA 라우팅 대응
+app.get("*", (req, res) => {
+  res.sendFile(path.resolve(__dirname, "../client/dist/index.html"));
+});
+
+// ✅ [8] 서버 실행
 app.listen(PORT, () => {
   console.log(`✅ 서버 실행 중: http://localhost:${PORT}`);
 });

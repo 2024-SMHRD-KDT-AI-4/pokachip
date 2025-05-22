@@ -15,8 +15,18 @@ function DiaryCreate() {
   const [weather, setWeather] = useState('');
   const [showOptions, setShowOptions] = useState(false);
 
-  // 로그인 사용자 이메일을 localStorage에서 가져온다고 가정
-  const userEmail = localStorage.getItem('user_email');
+  // 로그인 사용자 이메일을 localStorage에서 가져오기
+const userData = localStorage.getItem('user');
+let userEmail = null;
+
+if (userData) {
+  try {
+    const parsed = JSON.parse(userData);
+    userEmail = parsed.user_id;
+  } catch (e) {
+    console.error('❌ 로그인 정보 파싱 실패:', e);
+  }
+}
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files).slice(0, 5);
