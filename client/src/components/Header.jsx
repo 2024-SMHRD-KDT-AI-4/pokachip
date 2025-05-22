@@ -4,18 +4,16 @@ import { useAuth } from '../context/AuthContext';
 function Header() {
   const navigate = useNavigate();
   const { isLoggedIn, logout, user } = useAuth();
-  console.log("🧾 Header 렌더링됨, user:", user);
 
   const handleLogout = () => {
     logout();
-    navigate('/');
+    navigate(0); // ✅ 로그아웃 후 현재 페이지 soft reload → 마커 즉시 사라짐
   };
 
   return (
     <header className="bg-blue-100 px-4 py-2 shadow-md sticky top-0 z-50">
       <div className="flex items-center justify-between">
         <img src="/logo.png" alt="logo" className="h-8" />
-
         <div className="flex items-center gap-[10px]">
           {isLoggedIn ? (
             <>
@@ -31,16 +29,10 @@ function Header() {
             </>
           ) : (
             <>
-              <button
-                onClick={() => navigate('/login')}
-                className="text-sm text-blue-700 font-semibold hover:underline"
-              >
+              <button onClick={() => navigate('/login')} className="text-sm text-blue-700 font-semibold hover:underline">
                 로그인
               </button>
-              <button
-                onClick={() => navigate('/register')}
-                className="text-sm text-blue-700 font-semibold hover:underline"
-              >
+              <button onClick={() => navigate('/register')} className="text-sm text-blue-700 font-semibold hover:underline">
                 회원가입
               </button>
             </>
@@ -51,4 +43,4 @@ function Header() {
   );
 }
 
-export default Header;
+export default Header; // ✅ 꼭 추가해줘야 default import가 가능해짐
