@@ -1,136 +1,97 @@
-import React, { useEffect, useRef, useState } from "react";
-import * as exifr from "exifr";
+import React, { useEffect, useRef } from "react";
 
-const loadGoogleMapsScript = (callback) => {
-  const scriptId = "google-maps-script";
-  if (document.getElementById(scriptId)) {
-    callback();
-    return;
-  }
+// 1) 스크립트 로더를 Promise 기반으로 재정의
+function loadGoogleMapsScript() {
+  return new Promise((resolve, reject) => {
+    // 이미 로드되어 있으면 바로 resolve
+    if (window.google && window.google.maps) {
+      resolve();
+      return;
+    }
 
-  const script = document.createElement("script");
-  script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyDWQsyvCTLoek2LGOdXImWra7OvChrMya8`;
-  script.async = true;
-  script.defer = true;
-  script.onload = callback;
-  script.id = scriptId;
-  document.body.appendChild(script);
-};
+    const scriptId = "google-maps-script";
+    const existing = document.getElementById(scriptId);
 
-function PhotoMap() {
+    if (existing) {
+      // 로드 중인 경우 load 이벤트에 붙이기
+      existing.addEventListener("load", resolve);
+      existing.addEventListener("error", reject);
+    } else {
+      // 새로 추가
+      const script = document.createElement("script");
+      script.id = scriptId;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyDWQsyvCTLoek2LGOdXImWra7OvChrMya8`;
+      script.async = true;
+      script.defer = true;
+      script.onload = resolve;
+      script.onerror = reject;
+      document.head.appendChild(script);
+    }
+  });
+}
+
+export default function PhotoMap() {
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
-  const [isMapReady, setIsMapReady] = useState(false);
 
-  const extractGPS = async (file, callback) => {
-    try {
-      console.log("📂 파일 선택됨:", file.name);
-      const gpsData = await exifr.gps(file);
-      console.log("🧭 추출된 GPS 데이터:", gpsData);
-
-      const result = {
-        lat: gpsData?.latitude || null,
-        lng: gpsData?.longitude || null,
-        imageUrl: URL.createObjectURL(file),
-      };
-
-      callback(result);
-
-      if (!result.lat || !result.lng) {
-        console.warn("❗ GPS 없음 → fetch 실행 안 됨");
-        return;
-      }
-
-      const token = localStorage.getItem("token");
-      if (!token) {
-        alert("로그인이 필요합니다.");
-        return;
-      }
-
-      const uploadData = {
-        file_name: file.name,
-        lat: result.lat,
-        lng: result.lng,
-        taken_at: new Date().toISOString(),
-      };
-
-      console.log("📤 fetch 실행됨! 전송 내용:", uploadData);
-
-      fetch("http://localhost:5000/uploadPhoto", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
-        body: JSON.stringify(uploadData),
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          console.log("✅ 서버 응답:", data);
-        })
-        .catch((err) => {
-          console.error("❌ fetch 실패:", err);
-        });
-    } catch (error) {
-      console.error("❌ EXIF 추출 실패:", error);
-      callback({
-        lat: null,
-        lng: null,
-        imageUrl: URL.createObjectURL(file),
-      });
+  // 로그인된 유저 사진만 가져와서 마커를 찍는 함수
+  const loadUserPhotos = () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("로그인이 필요합니다.");
+      return;
     }
-  };
 
-  const handleFilesChange = (e) => {
-    const files = Array.from(e.target.files);
-    if (!isMapReady || files.length === 0) return;
-
-    files.forEach((file) => {
-      extractGPS(file, ({ lat, lng, imageUrl }) => {
-        if (!lat || !lng) return;
-
-        const marker = new window.google.maps.Marker({
-          position: { lat, lng },
-          map: mapInstance.current,
-          icon: {
-            url: "/icon-map-marker-1.png",
-            scaledSize: new window.google.maps.Size(40, 40),
-          },
+    fetch("http://localhost:5000/userPhotos", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(async (res) => {
+        if (!res.ok) throw new Error(await res.text());
+        return res.json();
+      })
+      .then((photos) => {
+        photos.forEach((p) => {
+          const marker = new window.google.maps.Marker({
+            position: { lat: p.lat, lng: p.lng },
+            map: mapInstance.current,
+          });
+          const info = new window.google.maps.InfoWindow({
+            content: `
+              <div>
+                <img src="http://localhost:5000${p.filePath}" style="width:100px; display:block; margin-bottom:5px;" />
+                <div>${new Date(p.taken_at).toLocaleString()}</div>
+              </div>
+            `,
+          });
+          marker.addListener("click", () => info.open(mapInstance.current, marker));
         });
-
-        const infoWindow = new window.google.maps.InfoWindow({
-          content: `<div><img src="${imageUrl}" width="100"/><p>이 위치에서 찍은 사진입니다.</p></div>`,
-        });
-
-        marker.addListener("click", () => {
-          infoWindow.open(mapInstance.current, marker);
-        });
-
-        mapInstance.current.setCenter({ lat, lng });
-      });
-    });
+      })
+      .catch((e) => console.error("사진 불러오기 실패:", e));
   };
 
   useEffect(() => {
-    loadGoogleMapsScript(() => {
-      if (mapRef.current && window.google && window.google.maps) {
+    // 2) Promise 기반 로드 → then 안에서만 Map 생성
+    loadGoogleMapsScript()
+      .then(() => {
+        // 3) mapRef.current 확인
+        if (!mapRef.current) {
+          console.error("❌ map container를 찾을 수 없습니다.");
+          return;
+        }
         mapInstance.current = new window.google.maps.Map(mapRef.current, {
           center: { lat: 36.5, lng: 127.5 },
           zoom: 7,
         });
-        setIsMapReady(true);
-      }
-    });
+        loadUserPhotos();
+      })
+      .catch((err) => {
+        console.error("구글 맵 스크립트 로드 실패:", err);
+      });
   }, []);
 
   return (
     <div>
-      <input
-        type="file"
-        accept="image/*"
-        multiple
-        onChange={handleFilesChange}
-      />
+      {/* 맵을 렌더링할 div */}
       <div
         ref={mapRef}
         style={{ width: "100%", height: "600px", marginTop: "10px" }}
@@ -138,5 +99,3 @@ function PhotoMap() {
     </div>
   );
 }
-
-export default PhotoMap;
