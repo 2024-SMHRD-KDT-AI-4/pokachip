@@ -1,50 +1,65 @@
-// ✅ DiaryView.jsx - 일기 제목, 날짜, 본문 표시 + 단일 일기 화면 (이전/다음 없음)
+// client/src/pages/DiaryView.jsx
 
-import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import axios from 'axios';
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import axios from "axios";
+import { toast } from "react-toastify";
 
-function DiaryView() {
+export default function DiaryView() {
   const { id } = useParams();
   const [diary, setDiary] = useState(null);
   const [photos, setPhotos] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchDiary() {
-      try {
-        const res = await axios.get(`http://localhost:5000/api/diary/${id}`);
-        setDiary(res.data.diary);
-        setPhotos(res.data.photos);
-      } catch (err) {
-        console.error('일기 불러오기 실패:', err);
-      }
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.info("로그인이 필요합니다");
+      return;
     }
-    fetchDiary();
+
+    axios
+      .get(`http://localhost:5000/api/diary/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => {
+        setDiary(res.data.diary);
+        setPhotos(res.data.photos || []);
+      })
+      .catch((err) => {
+        console.error("일기 불러오기 실패:", err);
+        toast.error("일기 불러오기 실패");
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, [id]);
 
-  if (!diary) return <p className="text-center mt-10">일기를 불러오는 중입니다...</p>;
+  if (loading) {
+    return <div className="p-6 text-center">일기를 불러오는 중입니다...</div>;
+  }
+
+  if (!diary) {
+    return <div className="p-6 text-center text-red-500">일기를 찾을 수 없습니다.</div>;
+  }
 
   return (
-    <div className="max-w-2xl mx-auto p-4">
-      {/* 📸 사진 표시 (첫 번째 사진만) */}
+    <div className="p-6 max-w-2xl mx-auto">
+      <h1 className="text-2xl font-bold mb-4">{diary.diary_title}</h1>
+      <p className="text-sm text-gray-500 mb-2">여행 날짜: {diary.trip_date}</p>
+      <div className="prose mb-6 whitespace-pre-wrap">{diary.diary_content}</div>
       {photos.length > 0 && (
-        <div className="relative">
-          <img
-            src={`http://localhost:5000/uploads/${photos[0].file_name}`}
-            alt="diary"
-            className="w-full h-80 object-cover rounded-md"
-          />
+        <div className="grid grid-cols-2 gap-4">
+          {photos.map((p, idx) => (
+            <img
+              key={idx}
+              src={`http://localhost:5000/uploads/${p.file_name}`}
+              alt={`photo-${idx}`}
+              className="w-full h-auto rounded"
+            />
+          ))}
         </div>
       )}
-
-      {/* 📝 일기 제목, 날짜, 본문 */}
-      <div className="mt-6">
-        <h2 className="text-2xl font-bold mb-2">{diary.diary_title}</h2>
-        <p className="text-sm text-gray-500 mb-4">{diary.trip_date}</p>
-        <div className="whitespace-pre-line leading-relaxed">{diary.diary_content}</div>
-      </div>
     </div>
   );
 }
-
-export default DiaryView;
