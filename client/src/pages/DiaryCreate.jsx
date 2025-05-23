@@ -9,7 +9,6 @@ function DiaryCreate() {
   const navigate = useNavigate();
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [previewUrls, setPreviewUrls] = useState([]);
-
   const [companion, setCompanion] = useState("");
   const [feeling, setFeeling] = useState("");
   const [lengthOption, setLengthOption] = useState("중간");
@@ -17,14 +16,12 @@ function DiaryCreate() {
   const [weather, setWeather] = useState("");
   const [showOptions, setShowOptions] = useState(false);
 
-  // 파일 선택 핸들러
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files).slice(0, 5);
     setSelectedFiles(files);
     setPreviewUrls(files.map((file) => URL.createObjectURL(file)));
   };
 
-  // 일기 생성 핸들러
   const handleGenerate = async () => {
     const token = localStorage.getItem("token");
     if (selectedFiles.length === 0) {
@@ -67,150 +64,93 @@ function DiaryCreate() {
     }
   };
 
+  const OptionButton = ({ label, selected, onClick }) => (
+    <button
+      onClick={onClick}
+      className={`px-4 py-2 rounded-full border text-sm whitespace-nowrap
+        ${selected ? 'bg-blue-500 text-white font-semibold' : 'bg-white text-gray-800'} 
+        shadow hover:shadow-md transition`}
+    >
+      {label}
+    </button>
+  );
+
   return (
-    <div className="p-6 max-w-xl mx-auto">
-      <h2 className="text-xl font-bold mb-4 text-center">📸 일기 작성하기</h2>
+    <div className="min-h-screen bg-gradient-to-b from-white via-blue-50 to-blue-100 px-4 py-8 max-w-[420px] mx-auto relative transition-all duration-300 ease-in-out">
+      <h2 className="text-2xl font-bold text-center mb-8">📖 감성 일기 만들기</h2>
 
       {/* 사진 업로드 */}
-      <input
-        type="file"
-        accept="image/*"
-        multiple
-        onChange={handleFileChange}
-        className="mb-4"
-      />
-
-      {/* 미리보기 */}
-      {previewUrls.length > 0 && (
-        <div className="flex flex-wrap gap-2 mt-2">
+      <div className="bg-white rounded-xl shadow-md p-4 mb-6">
+        <label className="block text-sm font-semibold mb-2">📸 사진 업로드 (최대 5장)</label>
+        <div className="flex gap-3 overflow-x-auto no-scrollbar py-1">
+          {previewUrls.length < 5 && (
+            <label
+              htmlFor="photo-upload"
+              className="flex-none w-24 h-24 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400 text-3xl cursor-pointer hover:border-blue-400 transition"
+            >
+              +
+              <input
+                id="photo-upload"
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleFileChange}
+                className="hidden"
+              />
+            </label>
+          )}
           {previewUrls.map((url, idx) => (
-            <img
-              key={idx}
-              src={url}
-              alt={`preview-${idx}`}
-              className="w-32 h-32 object-cover rounded border"
-            />
+            <div key={idx} className="flex-none w-24 h-24 rounded-lg overflow-hidden border">
+              <img src={url} alt={`preview-${idx}`} className="w-full h-full object-cover" />
+            </div>
           ))}
         </div>
-      )}
+      </div>
 
-      {/* 추가 정보 선택 토글 */}
-      <div className="flex justify-center mt-10">
+      {/* 추가 정보 토글 */}
+      <div className="text-center mb-4">
         <button
-          className="flex items-center gap-2 bg-gray-200 text-black px-4 py-2 rounded shadow"
           onClick={() => setShowOptions(!showOptions)}
+          className="text-blue-600 font-semibold underline"
         >
           🧾 추가 정보 선택하기
         </button>
       </div>
 
-      {/* 추가 정보 선택 UI */}
+      {/* 추가 정보 입력 */}
       {showOptions && (
-        <div className="grid gap-3 mt-6 text-sm">
-          {/* 동반자 */}
-          <div>
-            <label className="block font-semibold mb-1">동반자</label>
-            <div className="flex gap-4">
-              {["연인", "친구", "부모님", "혼자"].map((opt) => (
-                <label key={opt} className="inline-flex items-center gap-1">
-                  <input
-                    type="radio"
-                    name="companion"
-                    value={opt}
-                    checked={companion === opt}
-                    onChange={(e) => setCompanion(e.target.value)}
+        <div className="bg-white rounded-xl shadow-md p-5 space-y-6 text-sm mb-6">
+          {[
+            { title: '👥 동반자', values: ['연인', '친구', '부모님', '혼자'], state: companion, setter: setCompanion },
+            { title: '😊 기분', values: ['좋음', '보통', '나쁨'], state: feeling, setter: setFeeling },
+            { title: '🗣️ 말투', values: ['감성적인', '담백한', '발랄한', '유머러스한'], state: tone, setter: setTone },
+            { title: '📏 길이', values: ['짧게', '중간', '길게'], state: lengthOption, setter: setLengthOption },
+            { title: '🌤️ 날씨', values: ['맑음', '흐림', '비', '눈'], state: weather, setter: setWeather },
+          ].map(({ title, values, state, setter }) => (
+            <div key={title}>
+              <label className="block font-semibold mb-1">{title}</label>
+              <div className="flex flex-wrap gap-2">
+                {values.map(opt => (
+                  <OptionButton
+                    key={opt}
+                    label={opt}
+                    selected={state === opt}
+                    onClick={() => setter(opt)}
                   />
-                  {opt}
-                </label>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-
-          {/* 기분 */}
-          <div>
-            <label className="block font-semibold mb-1">기분</label>
-            <div className="flex gap-4">
-              {["좋음", "보통", "나쁨"].map((opt) => (
-                <label key={opt} className="inline-flex items-center gap-1">
-                  <input
-                    type="radio"
-                    name="feeling"
-                    value={opt}
-                    checked={feeling === opt}
-                    onChange={(e) => setFeeling(e.target.value)}
-                  />
-                  {opt}
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* 말투 스타일 */}
-          <div>
-            <label className="block font-semibold mb-1">말투 스타일</label>
-            <div className="flex gap-4">
-              {["감성적인", "담백한", "발랄한", "유머러스한"].map((opt) => (
-                <label key={opt} className="inline-flex items-center gap-1">
-                  <input
-                    type="radio"
-                    name="tone"
-                    value={opt}
-                    checked={tone === opt}
-                    onChange={(e) => setTone(e.target.value)}
-                  />
-                  {opt}
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* 일기 길이 */}
-          <div>
-            <label className="block font-semibold mb-1">일기 길이</label>
-            <div className="flex gap-4">
-              {["짧게", "중간", "길게"].map((opt) => (
-                <label key={opt} className="inline-flex items-center gap-1">
-                  <input
-                    type="radio"
-                    name="length"
-                    value={opt}
-                    checked={lengthOption === opt}
-                    onChange={(e) => setLengthOption(e.target.value)}
-                  />
-                  {opt}
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* 날씨 */}
-          <div>
-            <label className="block font-semibold mb-1">날씨</label>
-            <div className="flex gap-4">
-              {["맑음", "흐림", "비", "눈"].map((opt) => (
-                <label key={opt} className="inline-flex items-center gap-1">
-                  <input
-                    type="radio"
-                    name="weather"
-                    value={opt}
-                    checked={weather === opt}
-                    onChange={(e) => setWeather(e.target.value)}
-                  />
-                  {opt}
-                </label>
-              ))}
-            </div>
-          </div>
+          ))}
         </div>
       )}
 
       {/* 생성 버튼 */}
-      <div className="flex justify-center mt-10">
+      <div className="w-full mt-8">
         <button
           onClick={handleGenerate}
-          className="px-6 py-2 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 transition"
+          className="w-full py-3 bg-blue-500 text-white font-bold rounded-full shadow-lg text-lg hover:bg-blue-600 transition"
         >
-          📤 일기 생성하기
+          ✨ 일기 생성하기
         </button>
       </div>
     </div>
