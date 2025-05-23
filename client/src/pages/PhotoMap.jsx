@@ -26,27 +26,29 @@ export default function PhotoMap() {
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
   const currentInfoWindow = useRef(null);
-  const token = localStorage.getItem("token");
 
   useEffect(() => {
     loadGoogleMapsScript()
       .then(() => {
         if (!mapRef.current) throw new Error("map container not found");
-
         mapInstance.current = new window.google.maps.Map(mapRef.current, {
           center: { lat: 36.5, lng: 127.5 },
           zoom: 7,
         });
 
         const token = localStorage.getItem("token");
+        if (!token) {
+          toast.info("로그인이 필요합니다");
+          return;
+        }
 
-        // ✅ 로그인 안 된 경우 지도만 표시, fetch는 생략
-        if (!token) return;
-
-        // ✅ 로그인 되어 있으면 사진 fetch
         fetch("http://localhost:5000/userPhotos", {
           headers: { Authorization: `Bearer ${token}` },
         })
+          .then(async (res) => {
+            if (!res.ok) throw new Error(await res.text());
+            return res.json();
+          })
           .then((photos) => {
             photos.forEach((p) => {
               const marker = new window.google.maps.Marker({
@@ -114,7 +116,7 @@ export default function PhotoMap() {
           .catch((e) => console.error("사진 불러오기 실패:", e));
       })
       .catch((err) => console.error("구글 맵 로드 실패:", err));
-  }, [token]);
+  }, []);
 
   return (
     <div
