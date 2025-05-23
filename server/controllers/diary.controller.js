@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const ExifParser = require('exif-parser');
 const pool = require('../db');
-// const OPENAI_API_KEY = process.env.GPT_API_KEY;
+const OPENAI_API_KEY = process.env.GPT_API_KEY;
 
 // ✅ 1. 사진과 메타데이터 기반으로 GPT 감성 일기 생성 + DB 저장
 exports.generateDiaryFromImage = async (req, res) => {
