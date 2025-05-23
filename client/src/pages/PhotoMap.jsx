@@ -1,5 +1,4 @@
 import React, { useEffect, useRef } from "react";
-import { toast } from "react-toastify";
 
 function loadGoogleMapsScript() {
   return new Promise((resolve, reject) => {
@@ -38,7 +37,7 @@ export default function PhotoMap() {
 
         const token = localStorage.getItem("token");
         if (!token) {
-          toast.info("로그인이 필요합니다");
+          // 메인에서는 알림 없이 조용히 종료
           return;
         }
 
