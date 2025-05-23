@@ -36,8 +36,8 @@ export default function PhotoMap() {
           zoom: 7,
         });
 
-        const token = localStorage.getItem("token");
-        if (!token) return alert("로그인이 필요합니다.");
+        // const token = localStorage.getItem("token");
+        // if (!token) return alert("로그인이 필요합니다.");
 
         // 1) 사진 리스트 가져오기
         fetch("http://localhost:5000/userPhotos", {
