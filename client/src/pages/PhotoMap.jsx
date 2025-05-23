@@ -1,6 +1,5 @@
-// client/src/PhotoMap.jsx
-
 import React, { useEffect, useRef } from "react";
+import { toast } from "react-toastify";
 
 function loadGoogleMapsScript() {
   return new Promise((resolve, reject) => {
@@ -26,27 +25,28 @@ function loadGoogleMapsScript() {
 export default function PhotoMap() {
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
+  const currentInfoWindow = useRef(null);
+  const token = localStorage.getItem("token");
 
   useEffect(() => {
     loadGoogleMapsScript()
       .then(() => {
         if (!mapRef.current) throw new Error("map container not found");
+
         mapInstance.current = new window.google.maps.Map(mapRef.current, {
           center: { lat: 36.5, lng: 127.5 },
           zoom: 7,
         });
 
-        // const token = localStorage.getItem("token");
-        // if (!token) return alert("로그인이 필요합니다.");
+        const token = localStorage.getItem("token");
 
-        // 1) 사진 리스트 가져오기
+        // ✅ 로그인 안 된 경우 지도만 표시, fetch는 생략
+        if (!token) return;
+
+        // ✅ 로그인 되어 있으면 사진 fetch
         fetch("http://localhost:5000/userPhotos", {
           headers: { Authorization: `Bearer ${token}` },
         })
-          .then(async (res) => {
-            if (!res.ok) throw new Error(await res.text());
-            return res.json();
-          })
           .then((photos) => {
             photos.forEach((p) => {
               const marker = new window.google.maps.Marker({
@@ -60,28 +60,34 @@ export default function PhotoMap() {
                     <img
                       id="photo-${p.photoIdx}"
                       src="http://localhost:5000${p.filePath}"
-                      style="width:100px;cursor:pointer;"
+                      style="width:100px; cursor:pointer;"
                     />
                     <p>${new Date(p.taken_at).toLocaleString()}</p>
                   </div>
                 `,
               });
 
-              // 2) 마커 클릭 → InfoWindow 열기 + domready에서 이미지 클릭 바인딩
               marker.addListener("click", () => {
+                if (currentInfoWindow.current) {
+                  currentInfoWindow.current.close();
+                }
                 infoWindow.open(mapInstance.current, marker);
+                currentInfoWindow.current = infoWindow;
 
                 window.google.maps.event.addListenerOnce(
                   infoWindow,
                   "domready",
                   () => {
-                    const imgEl = document.getElementById(`photo-${p.photoIdx}`);
+                    const imgEl = document.getElementById(
+                      `photo-${p.photoIdx}`
+                    );
                     if (!imgEl) return;
                     imgEl.onclick = () => {
-                      // 3) 이미지 클릭 → 일기 API 호출 → 새 InfoWindow 로 출력
                       fetch(
                         `http://localhost:5000/api/diary/photo/${p.photoIdx}`,
-                        { headers: { Authorization: `Bearer ${token}` } }
+                        {
+                          headers: { Authorization: `Bearer ${token}` },
+                        }
                       )
                         .then(async (r) => {
                           if (!r.ok) throw new Error(await r.text());
@@ -90,7 +96,7 @@ export default function PhotoMap() {
                         .then((d) => {
                           new window.google.maps.InfoWindow({
                             content: `
-                              <div style="max-width:250px">
+                              <div style="max-width:250px;">
                                 <h4>${d.diary_title}</h4>
                                 <p>${d.diary_content}</p>
                                 <small>${d.trip_date}</small>
@@ -108,12 +114,12 @@ export default function PhotoMap() {
           .catch((e) => console.error("사진 불러오기 실패:", e));
       })
       .catch((err) => console.error("구글 맵 로드 실패:", err));
-  }, []);
+  }, [token]);
 
   return (
     <div
       ref={mapRef}
-      style={{ width: "100%", height: "600px", marginTop: "10px" }}
+      style={{ width: "100%", height: "600px", marginTop: 10 }}
     />
   );
 }
