@@ -15,7 +15,7 @@ function loadGoogleMapsScript() {
     const script = document.createElement("script");
     script.id = "google-maps-script";
     script.src =
-      "https://maps.googleapis.com/maps/api/js?key=AIzaSyDWQsyvCTLoek2LGOdXImWra7OvChrMya8";
+      "https://maps.googleapis.com/maps/api/js?key=AIzaSyDWQsyvCTLoek2LGOdXImWra7OvChrMya8&libraries=places";
     script.async = true;
     script.defer = true;
     script.onload = resolve;
@@ -24,7 +24,7 @@ function loadGoogleMapsScript() {
   });
 }
 
-export default function PhotoMap({ photos = [] }) {
+export default function PhotoMapForDiary({ photos = [] }) {
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
 
@@ -35,22 +35,42 @@ export default function PhotoMap({ photos = [] }) {
       .then(() => {
         if (!mapRef.current) throw new Error("Map container not found");
 
-        // 지도 초기화
-        mapInstance.current = new window.google.maps.Map(mapRef.current, {
+        const map = new window.google.maps.Map(mapRef.current, {
           center: { lat: 36.5, lng: 127.5 },
           zoom: 7,
         });
+        mapInstance.current = map;
 
-        // 마커만 찍고, 클릭 이벤트는 등록하지 않습니다
+        const geocoder = new window.google.maps.Geocoder();
+
         photos.forEach((photo) => {
           if (!photo.lat || !photo.lng) return;
 
-          new window.google.maps.Marker({
-            position: {
-              lat: parseFloat(photo.lat),
-              lng: parseFloat(photo.lng),
-            },
-            map: mapInstance.current,
+          const position = {
+            lat: parseFloat(photo.lat),
+            lng: parseFloat(photo.lng),
+          };
+
+          const marker = new window.google.maps.Marker({
+            position,
+            map,
+          });
+
+          // ✅ 마커 클릭 시 주소 표시
+          marker.addListener("click", () => {
+            geocoder.geocode({ location: position }, (results, status) => {
+              if (status === "OK" && results[0]) {
+                const address = results[0].formatted_address;
+
+                const infowindow = new window.google.maps.InfoWindow({
+                  content: `<div style="font-size:14px;">📍 ${address}</div>`,
+                });
+
+                infowindow.open(map, marker);
+              } else {
+                console.error("주소 변환 실패:", status);
+              }
+            });
           });
         });
       })

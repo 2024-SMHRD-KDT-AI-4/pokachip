@@ -1,5 +1,3 @@
-// client/src/pages/PhotoMapForMain.jsx
-
 import React, { useEffect, useRef } from "react";
 
 function loadGoogleMapsScript() {
@@ -15,8 +13,7 @@ function loadGoogleMapsScript() {
 
     const script = document.createElement("script");
     script.id = "google-maps-script";
-    script.src =
-      "https://maps.googleapis.com/maps/api/js?key=AIzaSyDWQsyvCTLoek2LGOdXImWra7OvChrMya8";
+    script.src = "https://maps.googleapis.com/maps/api/js?key=AIzaSyDWQsyvCTLoek2LGOdXImWra7OvChrMya8";
     script.async = true;
     script.defer = true;
     script.onload = resolve;
@@ -25,7 +22,7 @@ function loadGoogleMapsScript() {
   });
 }
 
-export default function PhotoMapForMain({ photos = [], diary = null }) {
+export default function PhotoMapForMain({ photos = [], diary }) {
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
   const currentInfoWindow = useRef(null);
@@ -43,16 +40,17 @@ export default function PhotoMapForMain({ photos = [], diary = null }) {
         });
 
         photos.forEach((photo) => {
-          if (!photo.lat || !photo.lng) return;
+          const lat = parseFloat(photo.lat);
+          const lng = parseFloat(photo.lng);
+
+          if (isNaN(lat) || isNaN(lng)) return;
 
           const marker = new window.google.maps.Marker({
-            position: {
-              lat: parseFloat(photo.lat),
-              lng: parseFloat(photo.lng),
-            },
+            position: { lat, lng },
             map: mapInstance.current,
           });
 
+          // ✅ diary가 존재할 경우에만 InfoWindow 생성
           if (diary) {
             const info = new window.google.maps.InfoWindow({
               content: `
