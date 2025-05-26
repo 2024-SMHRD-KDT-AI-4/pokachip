@@ -6,6 +6,7 @@ import DiaryCreate from './pages/DiaryCreate';
 import DiaryView from './pages/DiaryView';
 import GalleryHome from './pages/GalleryHome'; // ✅ 갤러리
 import MapPage from './pages/MapPage';
+import MyPage from './pages/MyPage'; // ✅ 마이페이지 import
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -35,8 +36,10 @@ function AppContent() {
             <GalleryHome setView={setView} />
           ) : view === "map" ? (
             <MapPage setView={setView} />
+          ) : view === "setting" ? (
+            <MyPage />
           ) : (
-            <div className="text-center text-gray-400 py-10">존재하지 않는 화면입니다.</div>
+            <div className="text-center mt-10">존재하지 않는 페이지입니다.</div>
           )}
         </RoutingWrapper>
       </main>

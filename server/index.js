@@ -4,8 +4,9 @@ const path = require("path");
 
 const authRouter = require('./routes/auth.route');      // 🔑 로그인 관련
 const diaryRoutes = require('./routes/diary.route');    // 📘 일기 관련
-const photoRouter = require('./routes/photoRouter');
+const photoRouter = require('./routes/photoRouter');     
 const galleryRouter = require('./routes/gallery.route');    // 🗺️ 지도/사진 관련
+const userRouter = require('./routes/user'); 
 
 const app = express();
 const PORT = 5000;
@@ -13,6 +14,7 @@ const PORT = 5000;
 // ✅ [1] 공통 미들웨어
 app.use(cors());
 app.use(express.json());
+app.use('/api/user', userRouter);
 
 // ✅ [2] 요청 로그
 app.use((req, res, next) => {

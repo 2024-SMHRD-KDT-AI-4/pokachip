@@ -11,6 +11,7 @@ import GalleryHome from './pages/GalleryHome';
 import GalleryFolder from './pages/GalleryFolder';
 import MapPage from './pages/MapPage';
 import { AuthProvider } from './context/AuthContext';
+import MyPage from './pages/MyPage';
 
 
 ReactDOM.createRoot(document.getElementById('root')).render(
@@ -25,6 +26,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           <Route path="/diary/:id" element={<DiaryView />} />
           <Route path="/gallery" element={<GalleryHome />} />
           <Route path="/gallery/:tag" element={<GalleryFolder />} />
+          <Route path="/mypage" element={<MyPage />} /> 
         </Routes>
       </BrowserRouter>
     </AuthProvider>
