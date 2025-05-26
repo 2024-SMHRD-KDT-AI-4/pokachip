@@ -4,6 +4,8 @@ import FooterNav from './components/FooterNav';
 import MainPage from './pages/MainPage';
 import DiaryCreate from './pages/DiaryCreate';
 import DiaryView from './pages/DiaryView';
+import GalleryHome from './pages/GalleryHome'; // ✅ 갤러리
+import MapPage from './pages/MapPage';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -29,8 +31,10 @@ function AppContent() {
             <MainPage setView={setView} />
           ) : view === "create" ? (
             <DiaryCreate setView={setView} />
+          ) : view === "gallery" ? (
+            <GalleryHome setView={setView} />
           ) : view === "map" ? (
-            <div /> // ✅ 완전히 비어 있는 영역 (추후 지도 컴포넌트 연결 예정)
+            <MapPage setView={setView} />
           ) : (
             <div className="text-center text-gray-400 py-10">존재하지 않는 화면입니다.</div>
           )}

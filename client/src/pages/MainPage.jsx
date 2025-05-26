@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import FooterNav from "../components/FooterNav";
-import PhotoMapForMain from "./PhotoMapForMain";
 
 function MainPage() {
   const [photos, setPhotos] = useState([]);
@@ -63,7 +62,6 @@ function MainPage() {
 
         <section>
           <h2 className="text-lg font-semibold mb-4">여행 지도</h2>
-          <PhotoMapForMain photos={photos} diary={diary} />
         </section>
       </main>
 

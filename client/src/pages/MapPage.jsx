@@ -1,4 +1,5 @@
-import React, { useEffect, useRef } from "react";
+// pages/MapPage.jsx
+import React, { useEffect, useRef, useState } from "react";
 
 function loadGoogleMapsScript() {
   return new Promise((resolve, reject) => {
@@ -17,74 +18,92 @@ function loadGoogleMapsScript() {
     script.async = true;
     script.defer = true;
     script.onload = resolve;
+
     script.onerror = reject;
     document.head.appendChild(script);
   });
 }
 
-export default function PhotoMapForMain({ photos = [], diary }) {
+export default function MapPage() {
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
   const currentInfoWindow = useRef(null);
+  const [photos, setPhotos] = useState([]);
+  const [diary, setDiary] = useState(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    fetch("http://localhost:5000/userPhotos", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => res.json())
+      .then((data) => setPhotos(data));
+
+    fetch("http://localhost:5000/api/diary/latest", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => res.json())
+      .then((data) => setDiary(data));
+  }, []);
 
   useEffect(() => {
     if (!photos.length) return;
 
     loadGoogleMapsScript()
       .then(() => {
-        if (!mapRef.current) throw new Error("Map container not found");
-
-        mapInstance.current = new window.google.maps.Map(mapRef.current, {
+        const map = new window.google.maps.Map(mapRef.current, {
           center: { lat: 36.5, lng: 127.5 },
           zoom: 7,
         });
+        mapInstance.current = map;
 
         photos.forEach((photo) => {
           const lat = parseFloat(photo.lat);
           const lng = parseFloat(photo.lng);
-
           if (isNaN(lat) || isNaN(lng)) return;
 
           const marker = new window.google.maps.Marker({
             position: { lat, lng },
-            map: mapInstance.current,
+            map,
           });
 
-          // ✅ diary가 존재할 경우에만 InfoWindow 생성
           if (diary) {
             const info = new window.google.maps.InfoWindow({
               content: `
                 <div style="max-width:250px;">
                   <img src="http://localhost:5000/uploads/${photo.file_name}" style="width:100px;border-radius:8px;" />
-                  <h4 style="margin:8px 0;">${diary.diary_title}</h4>
-                  <p style="white-space:pre-wrap;">${diary.diary_content}</p>
-                  <small style="color:gray;">${diary.trip_date}</small>
+                  <h4>${diary.diary_title}</h4>
+                  <p>${diary.diary_content}</p>
+                  <small>${diary.trip_date}</small>
                 </div>
               `,
             });
 
             marker.addListener("click", () => {
-              if (currentInfoWindow.current) {
-                currentInfoWindow.current.close();
-              }
-              info.open(mapInstance.current, marker);
+              if (currentInfoWindow.current) currentInfoWindow.current.close();
+              info.open(map, marker);
               currentInfoWindow.current = info;
             });
           }
         });
       })
-      .catch((err) => console.error("구글 맵 로딩 실패:", err));
+      .catch(console.error);
   }, [photos, diary]);
 
   return (
-    <div
-      ref={mapRef}
-      style={{
-        width: "100%",
-        height: "400px",
-        borderRadius: "12px",
-        marginTop: "1rem",
-      }}
-    />
+    <div className="p-4">
+      <h2 className="text-lg font-bold mb-4">🗺️ 여행 지도</h2>
+      <div
+        ref={mapRef}
+        style={{
+          width: "100%",
+          height: "400px",
+          borderRadius: "12px",
+          marginTop: "1rem",
+        }}
+      />
+    </div>
   );
 }

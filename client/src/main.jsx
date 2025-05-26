@@ -9,7 +9,7 @@ import DiaryCreate from './pages/DiaryCreate';
 import DiaryView from './pages/DiaryView';
 import GalleryHome from './pages/GalleryHome';
 import GalleryFolder from './pages/GalleryFolder';
-import PhotoMapForMain from './pages/PhotoMapForMain';
+import MapPage from './pages/MapPage';
 import { AuthProvider } from './context/AuthContext';
 
 
@@ -22,7 +22,6 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/diarycreate" element={<DiaryCreate />} />
-          <Route path="/map" element={<PhotoMapForMain />} /> {/* ✅ 수정됨 */}
           <Route path="/diary/:id" element={<DiaryView />} />
           <Route path="/gallery" element={<GalleryHome />} />
           <Route path="/gallery/:tag" element={<GalleryFolder />} />
