@@ -8,6 +8,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Pagination } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/pagination";
+import PhotoMap from "./PhotoMapForDiary.jsx"; // 지도 컴포넌트 추가
 
 export default function DiaryView() {
   const { id } = useParams();
@@ -64,6 +65,13 @@ export default function DiaryView() {
           📓 나의 여행 일기
         </h2>
       </div>
+
+      {/* 📍 지도 표시 (마커 + 일기 팝업) */}
+      {photos.length > 0 && diary && (
+        <div className="px-4 mt-4">
+          <PhotoMap photos={photos} diary={diary} />
+        </div>
+      )}
 
       {/* 📸 Carousel */}
       {photos.length > 0 && (

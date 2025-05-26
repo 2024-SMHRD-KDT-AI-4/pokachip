@@ -5,6 +5,7 @@ const router = express.Router();
 const db = require("../db");
 const authenticateToken = require("../middleware/authenticateToken");
 
+
 // 1) 사진 업로드 (원래 코드)
 router.post("/uploadPhoto", authenticateToken, async (req, res) => {
   console.log("🚀 [백엔드 수신] /uploadPhoto 요청 도착");
@@ -48,6 +49,13 @@ router.post("/uploadPhoto", authenticateToken, async (req, res) => {
 
 // 2) 로그인된 유저 사진만 조회 (photo_idx 포함)
 router.get("/userPhotos", authenticateToken, async (req, res) => {
+  console.log("🔥 디버깅 req.user:", req.user);
+
+  if (!req.user || !req.user.user_id) {
+    console.warn("❌ 인증 실패: 사용자 정보 없음");
+    return res.status(401).json({ message: "인증 실패: 사용자 정보 없음" });
+  }
+
   const user_id = req.user.user_id;
   console.log("🔑 조회할 user_id:", user_id);
 
@@ -61,8 +69,7 @@ router.get("/userPhotos", authenticateToken, async (req, res) => {
 
     const photos = rows
       .map((r) => {
-        // exif_loc에서 숫자 토큰만 추출
-        const nums = r.exif_loc.match(/-?\d+(\.\d+)?/g);
+        const nums = r.exif_loc?.match(/-?\d+(\.\d+)?/g);
         if (!nums || nums.length < 2) return null;
         return {
           photoIdx: r.photo_idx,
@@ -83,5 +90,6 @@ router.get("/userPhotos", authenticateToken, async (req, res) => {
     res.status(500).json({ message: "사진 조회 실패" });
   }
 });
+
 
 module.exports = router;

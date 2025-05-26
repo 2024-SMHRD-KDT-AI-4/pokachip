@@ -1,5 +1,3 @@
-// server/controllers/diary.controller.js
-
 require("dotenv").config();
 const axios = require("axios");
 const fs = require("fs");
@@ -8,10 +6,8 @@ const ExifParser = require("exif-parser");
 const pool = require("../db");
 const OPENAI_API_KEY = process.env.GPT_API_KEY;
 
-// 1) 사진과 메타데이터 기반으로 GPT 감성 일기 생성 + DB 저장
+// 1) 사진 + 메타데이터 기반 GPT 일기 생성
 exports.generateDiaryFromImage = async (req, res) => {
-  // ❌ 기존: const { companion, feeling, length, tone, weather, user_id } = req.body;
-  // ✅ 수정: user_id는 토큰에서만 가져옵니다.
   const user_id = req.user.user_id;
   const { companion, feeling, length, tone, weather } = req.body;
   const imageFiles = req.files;
@@ -23,8 +19,8 @@ exports.generateDiaryFromImage = async (req, res) => {
   try {
     let dateList = [];
     let locationList = [];
+    const gpsList = [];
 
-    // EXIF 메타데이터 추출
     const imageMessages = imageFiles.map((file) => {
       const imagePath = path.join(__dirname, "../uploads", file.filename);
       const imageBuffer = fs.readFileSync(imagePath);
@@ -38,12 +34,16 @@ exports.generateDiaryFromImage = async (req, res) => {
           dateList.push(new Date(result.tags.DateTimeOriginal * 1000));
         }
         if (result.tags.GPSLatitude && result.tags.GPSLongitude) {
-          locationList.push(
-            `위도 ${result.tags.GPSLatitude}, 경도 ${result.tags.GPSLongitude}`
-          );
+          const lat = result.tags.GPSLatitude;
+          const lng = result.tags.GPSLongitude;
+          locationList.push(`위도 ${lat}, 경도 ${lng}`);
+          gpsList.push({ lat, lng });
+        } else {
+          gpsList.push({ lat: null, lng: null });
         }
       } catch (err) {
         console.warn("EXIF 추출 실패:", err.message);
+        gpsList.push({ lat: null, lng: null });
       }
 
       return {
@@ -54,7 +54,6 @@ exports.generateDiaryFromImage = async (req, res) => {
       };
     });
 
-    // 여행 날짜 범위 계산
     let tripDateStr, tripDateDB;
     if (dateList.length > 0) {
       dateList.sort((a, b) => a - b);
@@ -66,10 +65,10 @@ exports.generateDiaryFromImage = async (req, res) => {
       tripDateStr = new Date().toISOString().slice(0, 10);
       tripDateDB = tripDateStr;
     }
+
     const locationInfo =
       locationList.length > 0 ? locationList.join(", ") : "";
 
-    // GPT 프롬프트 작성
     const promptText = `
 너는 여행 감성 일기 작가야. 다음 조건과 사진을 참고해서 작성해줘:
 
@@ -96,11 +95,10 @@ ${locationInfo ? `- 촬영 위치: ${locationInfo}` : ""}
       {
         role: "user",
         content: promptText,
-        ...{ images: imageMessages },
+        images: imageMessages,
       },
     ];
 
-    // ✅ GPT API 호출
     const gptRes = await axios.post(
       "https://api.openai.com/v1/chat/completions",
       {
@@ -122,7 +120,6 @@ ${locationInfo ? `- 촬영 위치: ${locationInfo}` : ""}
     const diaryTitle = titleLine.replace(/^##\s*제목:?\s*/, "").trim();
     const diaryContent = bodyLines.join("\n").trim();
 
-    // DB 저장
     const conn = await pool.getConnection();
     await conn.beginTransaction();
 
@@ -134,14 +131,18 @@ ${locationInfo ? `- 촬영 위치: ${locationInfo}` : ""}
     );
     const diary_idx = dRes.insertId;
 
-    for (const file of imageFiles) {
+    for (let i = 0; i < imageFiles.length; i++) {
+      const file = imageFiles[i];
       const fileName = file.filename;
+      const { lat, lng } = gpsList[i];
+
       const [pRes] = await conn.query(
         `INSERT INTO photo_info 
-           (user_id, file_name, exif_loc, taken_at, tags)
-         VALUES (?, ?, ?, NOW(), '')`,
-        [user_id, fileName, locationInfo]
+           (user_id, file_name, exif_loc, taken_at, tags, lat, lng)
+         VALUES (?, ?, ?, NOW(), '', ?, ?)`,
+        [user_id, fileName, locationInfo, lat, lng]
       );
+
       const photo_idx = pRes.insertId;
       await conn.query(
         `INSERT INTO ai_diary_photos 
@@ -154,7 +155,6 @@ ${locationInfo ? `- 촬영 위치: ${locationInfo}` : ""}
     await conn.commit();
     conn.release();
 
-    // ✅ Flask 서버 호출 추가 부분 (⚠️ 팀원 코드에 영향 없이 정확히 여기에 추가됨)
     try {
       await axios.post('http://localhost:6006/classify');
       console.log('✔️ Flask 서버로 분류 요청 전송 완료');
@@ -162,7 +162,6 @@ ${locationInfo ? `- 촬영 위치: ${locationInfo}` : ""}
       console.error('❌ Flask 서버 호출 실패:', err.message);
     }
 
-    // ✅ 프론트에 응답
     return res.json({
       message: "일기 저장 완료",
       diary_idx,
@@ -175,7 +174,7 @@ ${locationInfo ? `- 촬영 위치: ${locationInfo}` : ""}
   }
 };
 
-// 2) 일기 ID로 조회
+// 2) 일기 ID로 일기 + 사진 + 좌표 조회 (📍 지도용)
 exports.getDiaryById = async (req, res) => {
   const diaryId = req.params.id;
   try {
@@ -189,7 +188,7 @@ exports.getDiaryById = async (req, res) => {
     const diary = diaries[0];
 
     const [photos] = await pool.query(
-      `SELECT p.file_name 
+      `SELECT p.photo_idx, p.file_name, p.lat, p.lng
          FROM ai_diary_photos ap 
          JOIN photo_info p ON ap.photo_idx = p.photo_idx
         WHERE ap.diary_idx = ?`,
