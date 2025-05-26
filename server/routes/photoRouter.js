@@ -5,7 +5,6 @@ const router = express.Router();
 const db = require("../db");
 const authenticateToken = require("../middleware/authenticateToken");
 
-
 // 1) 사진 업로드 (원래 코드)
 router.post("/uploadPhoto", authenticateToken, async (req, res) => {
   console.log("🚀 [백엔드 수신] /uploadPhoto 요청 도착");
@@ -61,9 +60,15 @@ router.get("/userPhotos", authenticateToken, async (req, res) => {
 
   try {
     const [rows] = await db.execute(
-      `SELECT photo_idx, file_name, exif_loc, taken_at
-         FROM photo_info
-        WHERE user_id = ?`,
+      `
+      SELECT 
+        p.photo_idx, p.file_name, p.exif_loc, p.taken_at,
+        d.diary_title, d.diary_content, d.trip_date
+      FROM photo_info p
+      LEFT JOIN ai_diary_photos ap ON p.photo_idx = ap.photo_idx
+      LEFT JOIN ai_diary_info d ON ap.diary_idx = d.diary_idx
+      WHERE p.user_id = ?
+      `,
       [user_id]
     );
 
@@ -71,6 +76,7 @@ router.get("/userPhotos", authenticateToken, async (req, res) => {
       .map((r) => {
         const nums = r.exif_loc?.match(/-?\d+(\.\d+)?/g);
         if (!nums || nums.length < 2) return null;
+
         return {
           photoIdx: r.photo_idx,
           filePath: r.file_name.startsWith("/uploads/")
@@ -79,6 +85,13 @@ router.get("/userPhotos", authenticateToken, async (req, res) => {
           lat: parseFloat(nums[0]),
           lng: parseFloat(nums[1]),
           taken_at: r.taken_at,
+          diary: r.diary_title
+            ? {
+                diary_title: r.diary_title,
+                diary_content: r.diary_content,
+                trip_date: r.trip_date, 
+              }
+            : null,
         };
       })
       .filter((p) => p !== null);
@@ -90,6 +103,5 @@ router.get("/userPhotos", authenticateToken, async (req, res) => {
     res.status(500).json({ message: "사진 조회 실패" });
   }
 });
-
 
 module.exports = router;

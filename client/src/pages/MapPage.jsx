@@ -1,4 +1,3 @@
-// pages/MapPage.jsx
 import React, { useEffect, useRef, useState } from "react";
 
 function loadGoogleMapsScript() {
@@ -14,11 +13,11 @@ function loadGoogleMapsScript() {
 
     const script = document.createElement("script");
     script.id = "google-maps-script";
-    script.src = "https://maps.googleapis.com/maps/api/js?key=AIzaSyDWQsyvCTLoek2LGOdXImWra7OvChrMya8";
+    script.src =
+      "https://maps.googleapis.com/maps/api/js?key=AIzaSyDWQsyvCTLoek2LGOdXImWra7OvChrMya8";
     script.async = true;
     script.defer = true;
     script.onload = resolve;
-
     script.onerror = reject;
     document.head.appendChild(script);
   });
@@ -29,7 +28,6 @@ export default function MapPage() {
   const mapInstance = useRef(null);
   const currentInfoWindow = useRef(null);
   const [photos, setPhotos] = useState([]);
-  const [diary, setDiary] = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -40,12 +38,6 @@ export default function MapPage() {
     })
       .then((res) => res.json())
       .then((data) => setPhotos(data));
-
-    fetch("http://localhost:5000/api/diary/latest", {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => res.json())
-      .then((data) => setDiary(data));
   }, []);
 
   useEffect(() => {
@@ -69,28 +61,29 @@ export default function MapPage() {
             map,
           });
 
-          if (diary) {
-            const info = new window.google.maps.InfoWindow({
-              content: `
-                <div style="max-width:250px;">
-                  <img src="http://localhost:5000/uploads/${photo.file_name}" style="width:100px;border-radius:8px;" />
-                  <h4>${diary.diary_title}</h4>
-                  <p>${diary.diary_content}</p>
-                  <small>${diary.trip_date}</small>
-                </div>
-              `,
-            });
+          // 📍 마커 클릭 시 해당 일기 포함 InfoWindow
+          const info = new window.google.maps.InfoWindow({
+            content: `
+              <div style="max-width:250px;">
+                <img src="http://localhost:5000${photo.filePath}" style="width:100px;border-radius:8px;" />
+                <h4>${photo.diary?.diary_title || "제목 없음"}</h4>
+                <p style="white-space:pre-wrap;">${photo.diary?.diary_content || "내용 없음"}</p>
+                <small>${photo.diary?.trip_date || ""}</small>
+              </div>
+            `,
+          });
 
-            marker.addListener("click", () => {
-              if (currentInfoWindow.current) currentInfoWindow.current.close();
-              info.open(map, marker);
-              currentInfoWindow.current = info;
-            });
-          }
+          marker.addListener("click", () => {
+            if (currentInfoWindow.current) {
+              currentInfoWindow.current.close();
+            }
+            info.open(map, marker);
+            currentInfoWindow.current = info;
+          });
         });
       })
       .catch(console.error);
-  }, [photos, diary]);
+  }, [photos]);
 
   return (
     <div className="p-4">
