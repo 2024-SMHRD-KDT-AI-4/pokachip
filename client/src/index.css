@@ -2,3 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 📌 스크롤바 완전 숨기기 */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* 📌 얇게 표시 (디자인 모드) */
+.custom-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scroll::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 9999px;
+}

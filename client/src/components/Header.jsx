@@ -13,7 +13,13 @@ function Header() {
   return (
     <header className="bg-blue-100 px-4 py-2 shadow-md sticky top-0 z-50">
       <div className="flex items-center justify-between">
-        <img src="/logo.png" alt="logo" className="h-8" />
+        {/* ✅ 로고 클릭 시 홈으로 이동 */}
+        <img
+          src="/logo.png"
+          alt="logo"
+          className="h-8 cursor-pointer"
+          onClick={() => navigate('/')}
+        />
         <div className="flex items-center gap-[10px]">
           {isLoggedIn ? (
             <>
@@ -43,4 +49,4 @@ function Header() {
   );
 }
 
-export default Header; // ✅ 꼭 추가해줘야 default import가 가능해짐
+export default Header;

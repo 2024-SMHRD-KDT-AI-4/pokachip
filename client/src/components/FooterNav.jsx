@@ -1,23 +1,25 @@
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
-function FooterNav({ setView }) {
+function FooterNav() {
+  const navigate = useNavigate();
   const token = localStorage.getItem("token");
 
-  const handleClick = (view, requireLogin = true) => {
+  const handleClick = (path, requireLogin = true) => {
     if (requireLogin && !token) {
       toast.info("로그인이 필요합니다");
       return;
     }
 
-    setView(view);
+    navigate(path);
   };
 
   return (
     <nav className="bg-blue-100 p-2 flex justify-around items-center fixed bottom-0 w-full z-50">
-      {/* 📋 일기 작성 */}
+      {/* 📋 일기 작성 → 로그인 없이 가능 */}
       <button
         className="text-gray-600 hover:text-black"
-        onClick={() => handleClick("create", false)}
+        onClick={() => handleClick("/diarycreate", false)}
       >
         📋
       </button>
@@ -25,7 +27,7 @@ function FooterNav({ setView }) {
       {/* 🖼️ 갤러리 */}
       <button
         className="text-gray-600 hover:text-black"
-        onClick={() => handleClick("gallery", true)} // ✅ gallery로 정확히 연결
+        onClick={() => handleClick("/gallery")}
       >
         🖼️
       </button>
@@ -33,15 +35,15 @@ function FooterNav({ setView }) {
       {/* 🗺️ 지도 */}
       <button
         className="text-gray-600 hover:text-black"
-        onClick={() => handleClick("map", true)}
+        onClick={() => handleClick("/map")}
       >
         🗺️
       </button>
 
-      {/* ⚙️ 설정 (추후 구현 가능) */}
+      {/* ⚙️ 마이페이지 */}
       <button
         className="text-gray-600 hover:text-black"
-        onClick={() => handleClick("setting", true)}
+        onClick={() => handleClick("/mypage")}
       >
         ⚙️
       </button>

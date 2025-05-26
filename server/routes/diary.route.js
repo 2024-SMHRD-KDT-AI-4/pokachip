@@ -30,4 +30,9 @@ router.get("/:id", authenticateToken, diaryController.getDiaryById);
 // 3) 사진 클릭 시 해당 일기 조회
 router.get("/photo/:photoIdx", authenticateToken, diaryController.getDiaryByPhotoIdx);
 
+
+// 4) 로그인한 사용자의 전체 일기 목록 조회
+// GET /api/diary/
+router.get("/", authenticateToken, diaryController.getAllDiariesByUser);
+
 module.exports = router;
