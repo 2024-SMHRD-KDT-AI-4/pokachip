@@ -25,13 +25,19 @@ function MainPage() {
           fetch(`http://localhost:5000/api/diary/photo/${firstPhotoIdx}`, {
             headers: { Authorization: `Bearer ${token}` },
           })
-            .then((res) => res.json())
-            .then((d) => {
-              setDiary(d);
+            .then((res) => {
+              if (!res.ok) {
+                console.warn("해당 사진의 일기가 없습니다.");
+                return null;
+              }
+              return res.json();
             })
-            .catch((err) =>
-              console.error("일기 불러오기 실패:", err)
-            );
+            .then((d) => {
+              if (d) setDiary(d);
+            })
+            .catch((err) => {
+              console.error("일기 불러오기 실패:", err);
+            });
         }
       })
       .catch((err) => console.error("사진 로딩 실패:", err));

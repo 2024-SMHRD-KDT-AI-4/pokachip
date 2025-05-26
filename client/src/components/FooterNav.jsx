@@ -28,10 +28,10 @@ function FooterNav({ setView }) {
         📋
       </button>
 
-      {/* 🖼️ 지도 → 로그인 필요 */}
+      {/* 🖼️ 갤러리 → 로그인 필요 */}
       <button
         className="text-gray-600 hover:text-black"
-        onClick={() => handleClick("/map", false, true)}
+        onClick={() => handleClick("/gallery", false, true)} // ✅ 갤러리 복구
       >
         🖼️
       </button>

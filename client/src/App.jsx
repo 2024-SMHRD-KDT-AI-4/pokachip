@@ -4,7 +4,6 @@ import FooterNav from './components/FooterNav';
 import MainPage from './pages/MainPage';
 import DiaryCreate from './pages/DiaryCreate';
 import DiaryView from './pages/DiaryView';
-import PhotoMapForMain from './pages/PhotoMapForMain'; // ✅ 변경
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -30,16 +29,10 @@ function AppContent() {
             <MainPage setView={setView} />
           ) : view === "create" ? (
             <DiaryCreate setView={setView} />
+          ) : view === "map" ? (
+            <div /> // ✅ 완전히 비어 있는 영역 (추후 지도 컴포넌트 연결 예정)
           ) : (
-            <div>
-              <button
-                onClick={() => setView("main")}
-                className="bg-gray-500 text-white px-4 py-2 rounded m-4"
-              >
-                메인으로 돌아가기
-              </button>
-              <PhotoMapForMain /> {/* ✅ 이전에는 PhotoMap 사용 */}
-            </div>
+            <div className="text-center text-gray-400 py-10">존재하지 않는 화면입니다.</div>
           )}
         </RoutingWrapper>
       </main>
