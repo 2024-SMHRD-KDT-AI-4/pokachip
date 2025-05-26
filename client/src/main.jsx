@@ -9,6 +9,8 @@ import DiaryCreate from './pages/DiaryCreate';
 import PhotoMap from './pages/PhotoMap';
 import DiaryView from './pages/DiaryView';
 import { AuthProvider } from './context/AuthContext';
+import GalleryHome from './pages/GalleryHome';
+import GalleryFolder from './pages/GalleryFolder';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
@@ -21,6 +23,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           <Route path="/diarycreate" element={<DiaryCreate />} />
           <Route path="/map" element={<PhotoMap />} />
           <Route path="/diary/:id" element={<DiaryView />} />
+          <Route path="/gallery" element={<GalleryHome />} />
+          <Route path="/gallery/:tag" element={<GalleryFolder />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

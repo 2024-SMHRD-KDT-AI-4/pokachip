@@ -1,0 +1,56 @@
+import { useParams, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import axios from 'axios';
+
+const tagLabels = {
+  people: '인물',
+  landscape: '풍경',
+  food: '음식',
+  accommodation: '숙소'
+};
+
+function GalleryFolder() {
+  const { tag } = useParams();
+  const navigate = useNavigate();
+  const [photos, setPhotos] = useState([]);
+
+  // ✅ 로그인된 user_id 가져오기
+  const userData = localStorage.getItem('user');
+  const user_id = userData ? JSON.parse(userData).user_id : null;
+
+  useEffect(() => {
+    if (!user_id) return;
+
+    axios
+      .get(`http://localhost:5000/api/gallery/${tag}?user_id=${user_id}`)
+      .then((res) => setPhotos(res.data))
+      .catch((err) => console.error('📛 사진 불러오기 실패:', err));
+  }, [tag, user_id]);
+
+  return (
+    <div className="p-4 max-w-xl mx-auto">
+      <div className="flex items-center mb-4">
+        <button
+          onClick={() => navigate(-1)}
+          className="text-blue-500 font-semibold mr-2"
+        >
+          ← 뒤로가기
+        </button>
+        <h2 className="text-xl font-bold">{tagLabels[tag]}</h2>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2">
+        {photos.map((photo, idx) => (
+          <img
+            key={idx}
+            src={`http://localhost:5000/uploads/${photo.file_name}`}
+            alt={`img-${idx}`}
+            className="w-full h-32 object-cover rounded"
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default GalleryFolder;

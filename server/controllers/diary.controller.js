@@ -154,14 +154,24 @@ ${locationInfo ? `- 촬영 위치: ${locationInfo}` : ""}
     await conn.commit();
     conn.release();
 
+    // ✅ Flask 서버 호출 추가 부분 (⚠️ 팀원 코드에 영향 없이 정확히 여기에 추가됨)
+    try {
+      await axios.post('http://localhost:6006/classify');
+      console.log('✔️ Flask 서버로 분류 요청 전송 완료');
+    } catch (err) {
+      console.error('❌ Flask 서버 호출 실패:', err.message);
+    }
+
+    // ✅ 프론트에 응답
     return res.json({
       message: "일기 저장 완료",
       diary_idx,
       trip_date: tripDateStr,
     });
-  } catch (err) {
-    console.error("GPT 또는 DB 저장 실패:", err.response?.data || err);
-    return res.status(500).json({ error: "GPT 또는 저장 실패" });
+
+  } catch (error) {
+    console.error('GPT 또는 DB 저장 실패:', error.response?.data || error.message);
+    res.status(500).json({ error: 'GPT 또는 저장 실패' });
   }
 };
 

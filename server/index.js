@@ -4,7 +4,8 @@ const path = require("path");
 
 const authRouter = require('./routes/auth.route');      // 🔑 로그인 관련
 const diaryRoutes = require('./routes/diary.route');    // 📘 일기 관련
-const photoRouter = require('./routes/photoRouter');    // 🗺️ 지도/사진 관련
+const photoRouter = require('./routes/photoRouter');
+const galleryRouter = require('./routes/gallery.route');    // 🗺️ 지도/사진 관련
 
 const app = express();
 const PORT = 5000;
@@ -31,6 +32,7 @@ app.get('/api/test', (req, res) => {
 app.use('/api/diary', diaryRoutes);
 app.use('/api', authRouter);
 app.use("/", photoRouter);
+app.use('/api', galleryRouter);
 
 // ✅ [6] 프론트엔드 정적 파일 서빙
 app.use(express.static(path.join(__dirname, "../client/dist")));
