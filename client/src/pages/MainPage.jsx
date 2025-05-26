@@ -52,13 +52,26 @@ function MainPage() {
     const { day, month, year } = formatDate(data.date || data.trip_date);
     const title = data.title || data.diary_title;
     const fileName = data.file_name;
+    const diaryId = data.diary_idx;
+
     const image = fileName
       ? `http://localhost:5000/uploads/${fileName}`
       : "/default-image.jpg";
 
+    const handleCardClick = () => {
+      if (!isLoggedIn) {
+        setShowLoginModal(true);
+        return;
+      }
+      navigate(`/diary/${diaryId}`);
+    };
+
     return (
       <SwiperSlide key={idx} className="flex flex-col items-center space-y-2 px-4">
-        <div className="w-full h-[220px] sm:h-[250px] md:h-[300px] rounded-xl overflow-hidden shadow-md">
+        <div
+          onClick={handleCardClick}
+          className="w-full h-[280px] sm:h-[320px] md:h-[360px] rounded-xl overflow-hidden shadow-md cursor-pointer"
+        >
           <img
             src={image}
             alt={title}
@@ -80,6 +93,7 @@ function MainPage() {
       </SwiperSlide>
     );
   };
+
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-[#fff] max-w-full sm:max-w-[420px] mx-auto px-2">
