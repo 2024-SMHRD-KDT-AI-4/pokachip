@@ -28,6 +28,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
           <Route path="/diary/:id" element={<DiaryView />} />
           <Route path="/gallery" element={<GalleryHome />} />
           <Route path="/gallery/:tag" element={<GalleryFolder />} />
+          <Route path="/map" element={<MapPage />} />
           <Route path="/mypage" element={<MyPage />} />
           </Route> 
         </Routes>
