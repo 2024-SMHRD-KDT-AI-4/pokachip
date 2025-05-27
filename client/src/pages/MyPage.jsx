@@ -74,6 +74,20 @@ function MyPage() {
                 </div>
             </div>
 
+            {/* 로그아웃 버튼 */}
+            <div className="text-center mt-8">
+                <button
+                    onClick={() => {
+                        localStorage.removeItem('user');
+                        alert("로그아웃 되었습니다.");
+                        window.location.href = '/login';
+                    }}
+                    className="text-sm px-4 py-2 border border-gray-300 rounded-xl text-gray-500 hover:text-blue-500 hover:border-blue-300 transition mb-4"
+                >
+                    로그아웃
+                </button>
+            </div>
+
             {/* 회원 탈퇴 */}
             <div className="text-center mt-8">
                 <button
