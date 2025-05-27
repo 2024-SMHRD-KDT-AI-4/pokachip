@@ -122,40 +122,41 @@ function MainPage() {
 
         {(!isLoggedIn || diaries.length === 0) && (
           <div className="px-4">
-            <div className="bg-blue-50 rounded-xl p-4 flex justify-between items-center shadow-md">
+            <div
+              onClick={() => {
+                if (!isLoggedIn) {
+                  setShowLoginModal(true);
+                } else {
+                  navigate("/diarycreate");
+                }
+              }}
+              className="bg-blue-50 rounded-xl p-4 flex justify-between items-center shadow-md cursor-pointer"
+            >
               <p className="text-gray-800 font-semibold">
                 여행을 기록해볼까요?
               </p>
-              <button
-                onClick={() => {
-                  if (!isLoggedIn) {
-                    setShowLoginModal(true);
-                  } else {
-                    navigate("/diarycreate");
-                  }
-                }}
-                className="bg-blue-500 text-white text-xl rounded-full w-9 h-9 flex items-center justify-center hover:bg-blue-600"
-              >
+              <div className="bg-blue-500 text-white text-xl rounded-full w-9 h-9 flex items-center justify-center hover:bg-blue-600">
                 +
-              </button>
+              </div>
             </div>
           </div>
         )}
 
         {isLoggedIn && diaries.length > 0 && (
           <div className="px-4">
-            <div className="bg-blue-50 rounded-xl p-4 flex justify-between items-center shadow-md">
+            <div
+              onClick={() => navigate("/diarycreate")}
+              className="bg-blue-50 rounded-xl p-4 flex justify-between items-center shadow-md cursor-pointer"
+            >
               <p className="text-gray-800 font-semibold">
                 새로운 여행을 기록해볼까요?
               </p>
-              <button
-                onClick={() => navigate("/diarycreate")}
-                className="bg-blue-500 text-white text-xl rounded-full w-9 h-9 flex items-center justify-center hover:bg-blue-600"
-              >
+              <div className="bg-blue-500 text-white text-xl rounded-full w-9 h-9 flex items-center justify-center hover:bg-blue-600">
                 +
-              </button>
+              </div>
             </div>
           </div>
+
         )}
 
         {showLoginModal && (
