@@ -47,7 +47,7 @@ exports.getPhotosByTag = async (req, res) => {
 
   try {
     const [rows] = await pool.query(
-      `SELECT file_name FROM photo_info
+      `SELECT photo_idx, file_name FROM photo_info
        WHERE user_id = ? AND tags = ?
        ORDER BY taken_at DESC`,
       [user_id, tag]

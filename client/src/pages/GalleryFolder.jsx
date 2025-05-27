@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import PhotoModal from '../components/PhotoModal'; // ✅ 모달 컴포넌트
 
 const tagLabels = {
   people: '인물',
@@ -13,8 +14,9 @@ function GalleryFolder() {
   const { tag } = useParams();
   const navigate = useNavigate();
   const [photos, setPhotos] = useState([]);
+  const [selectedPhoto, setSelectedPhoto] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // ✅ 로그인된 user_id 가져오기
   const userData = localStorage.getItem('user');
   const user_id = userData ? JSON.parse(userData).user_id : null;
 
@@ -28,7 +30,7 @@ function GalleryFolder() {
   }, [tag, user_id]);
 
   return (
-    <div className="p-4 max-w-xl mx-auto">
+    <div className="p-4 max-w-[420px] mx-auto">
       <div className="flex items-center mb-4">
         <button
           onClick={() => navigate(-1)}
@@ -45,10 +47,26 @@ function GalleryFolder() {
             key={idx}
             src={`http://localhost:5000/uploads/${photo.file_name}`}
             alt={`img-${idx}`}
-            className="w-full h-32 object-cover rounded"
+            className="w-full h-32 object-cover rounded cursor-pointer"
+            onClick={() => {
+              console.log(photo);
+              setSelectedPhoto(photo);
+              setIsModalOpen(true);
+            }}
           />
         ))}
       </div>
+
+      {/* ✅ 전체화면 모달 */}
+      {isModalOpen && selectedPhoto && (
+        <PhotoModal
+          photo={selectedPhoto}
+          onClose={() => {
+            setIsModalOpen(false);
+            setSelectedPhoto(null);
+          }}
+        />
+      )}
     </div>
   );
 }
