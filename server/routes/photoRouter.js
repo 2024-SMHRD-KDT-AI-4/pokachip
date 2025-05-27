@@ -5,7 +5,7 @@ const router = express.Router();
 const db = require("../db");
 const authenticateToken = require("../middleware/authenticateToken");
 
-// 1) 사진 업로드 (원래 코드)
+// 1) 사진 업로드 (원래 코드, 건드리지 않음)
 router.post("/uploadPhoto", authenticateToken, async (req, res) => {
   console.log("🚀 [백엔드 수신] /uploadPhoto 요청 도착");
   const user_id = req.user.user_id;
@@ -16,8 +16,8 @@ router.post("/uploadPhoto", authenticateToken, async (req, res) => {
   }
 
   const sql = `
-    INSERT INTO photo_info (user_id, file_name, exif_loc, taken_at, tags)
-    VALUES (?, ?, ?, ?, ?)
+    INSERT INTO photo_info (user_id, file_name, exif_loc, taken_at, tags, lat, lng)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
   `;
   const location = `위도:${lat}, 경도:${lng}`;
 
@@ -32,12 +32,16 @@ router.post("/uploadPhoto", authenticateToken, async (req, res) => {
       location,
       taken_at_mysql,
       "",
+      lat,
+      lng,
     ]);
     console.log("📥 사진 업로드 DB 저장됨:", {
       user_id,
       file_path: `/uploads/${file_name}`,
       location,
       taken_at: taken_at_mysql,
+      lat,
+      lng,
     });
     res.json({ message: "📸 사진 정보 DB 저장 완료" });
   } catch (error) {
@@ -46,24 +50,22 @@ router.post("/uploadPhoto", authenticateToken, async (req, res) => {
   }
 });
 
-// 2) 로그인된 유저 사진만 조회 (photo_idx 포함)
+// 2) 로그인된 유저 사진 전체 조회 (photo_idx 포함, 반드시 lat/lng도 내려보냄)
 router.get("/userPhotos", authenticateToken, async (req, res) => {
-  console.log("🔥 디버깅 req.user:", req.user);
-
   if (!req.user || !req.user.user_id) {
-    console.warn("❌ 인증 실패: 사용자 정보 없음");
     return res.status(401).json({ message: "인증 실패: 사용자 정보 없음" });
   }
 
   const user_id = req.user.user_id;
-  console.log("🔑 조회할 user_id:", user_id);
 
   try {
+    // 각 사진의 진짜 위경도(lat/lng) 정보를 select
     const [rows] = await db.execute(
       `
       SELECT 
-        p.photo_idx, p.file_name, p.exif_loc, p.taken_at,
-        d.diary_idx,               -- ✅ diary_idx 가져오기
+        p.photo_idx, p.file_name, p.taken_at,
+        p.lat, p.lng,   -- 반드시 포함!
+        d.diary_idx,
         d.diary_title, d.diary_content, d.trip_date
       FROM photo_info p
       LEFT JOIN ai_diary_photos ap ON p.photo_idx = ap.photo_idx
@@ -73,32 +75,27 @@ router.get("/userPhotos", authenticateToken, async (req, res) => {
       [user_id]
     );
 
+    // 응답 객체 생성 (lat/lng가 null이면 마커 생성 안 함)
     const photos = rows
-      .map((r) => {
-        const nums = r.exif_loc?.match(/-?\d+(\.\d+)?/g);
-        if (!nums || nums.length < 2) return null;
+      .filter(r => r.lat !== null && r.lng !== null)
+      .map((r) => ({
+        photoIdx: r.photo_idx,
+        filePath: r.file_name.startsWith("/uploads/")
+          ? r.file_name
+          : `/uploads/${r.file_name}`,
+        lat: parseFloat(r.lat),
+        lng: parseFloat(r.lng),
+        taken_at: r.taken_at,
+        diary: r.diary_title
+          ? {
+              diary_idx: r.diary_idx,
+              diary_title: r.diary_title,
+              diary_content: r.diary_content,
+              trip_date: r.trip_date,
+            }
+          : null,
+      }));
 
-        return {
-          photoIdx: r.photo_idx,
-          filePath: r.file_name.startsWith("/uploads/")
-            ? r.file_name
-            : `/uploads/${r.file_name}`,
-          lat: parseFloat(nums[0]),
-          lng: parseFloat(nums[1]),
-          taken_at: r.taken_at,
-          diary: r.diary_title
-            ? {
-                diary_idx: r.diary_idx,  // ✅ 이 줄 추가
-                diary_title: r.diary_title,
-                diary_content: r.diary_content,
-                trip_date: r.trip_date,
-              }
-            : null,
-        };
-      })
-      .filter((p) => p !== null);
-
-    console.log("✅ 조회된 사진 개수:", photos.length);
     res.json(photos);
   } catch (err) {
     console.error("❌ /userPhotos 에러:", err);

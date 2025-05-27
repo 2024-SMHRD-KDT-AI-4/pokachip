@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 function loadGoogleMapsScript() {
   return new Promise((resolve, reject) => {
@@ -26,75 +27,121 @@ function loadGoogleMapsScript() {
 export default function MapPage() {
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
-  const currentInfoWindow = useRef(null);
+  const markersRef = useRef([]);
+  const infoWindowRef = useRef(null);
   const [photos, setPhotos] = useState([]);
+  const navigate = useNavigate();
 
+  // 1) 사진 데이터 불러오기
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return;
-
     fetch("http://localhost:5000/userPhotos", {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
-      .then((data) => setPhotos(data));
+      .then((data) => setPhotos(data))
+      .catch(console.error);
   }, []);
 
+  // 2) 마커 찍기
   useEffect(() => {
     if (!photos.length) return;
 
-    loadGoogleMapsScript()
-      .then(() => {
-        const map = new window.google.maps.Map(mapRef.current, {
+    loadGoogleMapsScript().then(() => {
+      const google = window.google;
+      let map = mapInstance.current;
+
+      if (!map) {
+        map = new google.maps.Map(mapRef.current, {
           center: { lat: 36.5, lng: 127.5 },
           zoom: 7,
         });
         mapInstance.current = map;
+      } else {
+        google.maps.event.trigger(map, "resize");
+      }
 
-        const geocoder = new window.google.maps.Geocoder();
+      markersRef.current.forEach((m) => m.setMap(null));
+      markersRef.current = [];
+      infoWindowRef.current?.close();
 
-        photos.forEach((photo) => {
-          const lat = parseFloat(photo.lat);
-          const lng = parseFloat(photo.lng);
-          if (isNaN(lat) || isNaN(lng)) return;
+      const bounds = new google.maps.LatLngBounds();
 
-          const marker = new window.google.maps.Marker({
-            position: { lat, lng },
-            map,
-          });
+      // 좌표별로 같은 위치에 여러 장이 있다면, 마커끼리 오프셋 분산
+      const locCount = {};
+      photos.forEach((photo) => {
+        const key = `${photo.lat},${photo.lng}`;
+        locCount[key] = (locCount[key] || 0) + 1;
+      });
+      const locPlaced = {};
 
-          geocoder.geocode({ location: { lat, lng } }, (results, status) => {
-            if (status === "OK" && results[0]) {
-              const address = results[0].formatted_address;
-              const diaryId = photo.diary?.diary_idx;
+      photos.forEach((photo, idx) => {
+        const lat = parseFloat(photo.lat);
+        const lng = parseFloat(photo.lng);
+        if (isNaN(lat) || isNaN(lng)) return;
 
-              const info = new window.google.maps.InfoWindow({
-                content: `
-                  <div style="max-width:250px;">
-                    <a href="/diary/${diaryId}">
-                      <img 
-                        src="http://localhost:5000${photo.filePath}" 
-                        style="width:100px;border-radius:8px;cursor:pointer;"
-                      />
-                    </a>
-                    <p style="margin-top:6px;font-size:14px;color:#333;">${address}</p>
-                  </div>
-                `,
-              });
+        const key = `${lat},${lng}`;
+        locPlaced[key] = (locPlaced[key] || 0) + 1;
 
-              marker.addListener("click", () => {
-                if (currentInfoWindow.current) {
-                  currentInfoWindow.current.close();
-                }
-                info.open(map, marker);
-                currentInfoWindow.current = info;
+        // 오프셋을 같은 위치의 n번째 사진에만 적용
+        const offsetPixel = 0.00008; // 약 8m
+        const count = locCount[key];
+        let markerLat = lat;
+        let markerLng = lng;
+        if (count > 1) {
+          // 가운데부터 양쪽으로 펴지도록 분산
+          const i = locPlaced[key] - 1;
+          const mid = (count - 1) / 2;
+          markerLat = lat + (i - mid) * offsetPixel;
+          markerLng = lng + (i - mid) * offsetPixel;
+        }
+
+        const position = { lat: markerLat, lng: markerLng };
+        bounds.extend(position);
+
+        const marker = new google.maps.Marker({
+          position,
+          map,
+        });
+        markersRef.current.push(marker);
+
+        const infoWindow = new google.maps.InfoWindow({
+          content: `
+            <div style="text-align:center; max-width:200px;">
+              <img 
+                src="http://localhost:5000${photo.filePath}" 
+                data-diary-id="${photo.diary?.diary_idx}" 
+                style="width:100%;cursor:pointer;border-radius:8px;" 
+                alt="photo"
+              />
+            </div>
+          `,
+        });
+
+        marker.addListener("click", () => {
+          infoWindowRef.current?.close();
+          infoWindow.open(map, marker);
+          infoWindowRef.current = infoWindow;
+
+          google.maps.event.addListenerOnce(infoWindow, "domready", () => {
+            const img = document.querySelector(
+              `img[data-diary-id="${photo.diary?.diary_idx}"]`
+            );
+            if (img) {
+              img.addEventListener("click", () => {
+                navigate(`/diary/${photo.diary?.diary_idx}`);
               });
             }
           });
         });
-      })
-      .catch(console.error);
-  }, [photos]);
+      });
+
+      if (!bounds.isEmpty()) {
+        map.fitBounds(bounds);
+      }
+    });
+  }, [photos, navigate]);
 
   return (
     <div className="p-4">
