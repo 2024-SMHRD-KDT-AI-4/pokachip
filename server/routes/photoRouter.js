@@ -63,6 +63,7 @@ router.get("/userPhotos", authenticateToken, async (req, res) => {
       `
       SELECT 
         p.photo_idx, p.file_name, p.exif_loc, p.taken_at,
+        d.diary_idx,               -- ✅ diary_idx 가져오기
         d.diary_title, d.diary_content, d.trip_date
       FROM photo_info p
       LEFT JOIN ai_diary_photos ap ON p.photo_idx = ap.photo_idx
@@ -87,9 +88,10 @@ router.get("/userPhotos", authenticateToken, async (req, res) => {
           taken_at: r.taken_at,
           diary: r.diary_title
             ? {
+                diary_idx: r.diary_idx,  // ✅ 이 줄 추가
                 diary_title: r.diary_title,
                 diary_content: r.diary_content,
-                trip_date: r.trip_date, 
+                trip_date: r.trip_date,
               }
             : null,
         };

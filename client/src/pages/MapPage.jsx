@@ -51,6 +51,8 @@ export default function MapPage() {
         });
         mapInstance.current = map;
 
+        const geocoder = new window.google.maps.Geocoder();
+
         photos.forEach((photo) => {
           const lat = parseFloat(photo.lat);
           const lng = parseFloat(photo.lng);
@@ -61,24 +63,33 @@ export default function MapPage() {
             map,
           });
 
-          // 📍 마커 클릭 시 해당 일기 포함 InfoWindow
-          const info = new window.google.maps.InfoWindow({
-            content: `
-              <div style="max-width:250px;">
-                <img src="http://localhost:5000${photo.filePath}" style="width:100px;border-radius:8px;" />
-                <h4>${photo.diary?.diary_title || "제목 없음"}</h4>
-                <p style="white-space:pre-wrap;">${photo.diary?.diary_content || "내용 없음"}</p>
-                <small>${photo.diary?.trip_date || ""}</small>
-              </div>
-            `,
-          });
+          geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+            if (status === "OK" && results[0]) {
+              const address = results[0].formatted_address;
+              const diaryId = photo.diary?.diary_idx;
 
-          marker.addListener("click", () => {
-            if (currentInfoWindow.current) {
-              currentInfoWindow.current.close();
+              const info = new window.google.maps.InfoWindow({
+                content: `
+                  <div style="max-width:250px;">
+                    <a href="/diary/${diaryId}">
+                      <img 
+                        src="http://localhost:5000${photo.filePath}" 
+                        style="width:100px;border-radius:8px;cursor:pointer;"
+                      />
+                    </a>
+                    <p style="margin-top:6px;font-size:14px;color:#333;">${address}</p>
+                  </div>
+                `,
+              });
+
+              marker.addListener("click", () => {
+                if (currentInfoWindow.current) {
+                  currentInfoWindow.current.close();
+                }
+                info.open(map, marker);
+                currentInfoWindow.current = info;
+              });
             }
-            info.open(map, marker);
-            currentInfoWindow.current = info;
           });
         });
       })
