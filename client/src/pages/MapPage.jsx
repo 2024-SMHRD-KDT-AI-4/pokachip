@@ -32,7 +32,6 @@ export default function MapPage() {
   const [photos, setPhotos] = useState([]);
   const navigate = useNavigate();
 
-  // 1) 사진 데이터 불러오기
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return;
@@ -44,7 +43,6 @@ export default function MapPage() {
       .catch(console.error);
   }, []);
 
-  // 2) 마커 찍기
   useEffect(() => {
     if (!photos.length) return;
 
@@ -67,6 +65,7 @@ export default function MapPage() {
       infoWindowRef.current?.close();
 
       const bounds = new google.maps.LatLngBounds();
+      const geocoder = new google.maps.Geocoder();
 
       // 좌표별로 같은 위치에 여러 장이 있다면, 마커끼리 오프셋 분산
       const locCount = {};
@@ -106,33 +105,45 @@ export default function MapPage() {
         });
         markersRef.current.push(marker);
 
-        const infoWindow = new google.maps.InfoWindow({
-          content: `
-            <div style="text-align:center; max-width:200px;">
-              <img 
-                src="http://localhost:5000${photo.filePath}" 
-                data-diary-id="${photo.diary?.diary_idx}" 
-                style="width:100%;cursor:pointer;border-radius:8px;" 
-                alt="photo"
-              />
-            </div>
-          `,
-        });
-
         marker.addListener("click", () => {
-          infoWindowRef.current?.close();
-          infoWindow.open(map, marker);
-          infoWindowRef.current = infoWindow;
-
-          google.maps.event.addListenerOnce(infoWindow, "domready", () => {
-            const img = document.querySelector(
-              `img[data-diary-id="${photo.diary?.diary_idx}"]`
-            );
-            if (img) {
-              img.addEventListener("click", () => {
-                navigate(`/diary/${photo.diary?.diary_idx}`);
-              });
+          // 1. 주소 정보 가져오기
+          geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+            let address = "주소 정보를 찾을 수 없습니다";
+            if (status === "OK" && results && results[0]) {
+              address = results[0].formatted_address;
             }
+
+            // 2. InfoWindow: 사진 + 주소 표시
+            const infoWindow = new google.maps.InfoWindow({
+              content: `
+                <div style="text-align:center; max-width:220px;">
+                  <img 
+                    src="http://localhost:5000${photo.filePath}" 
+                    data-diary-id="${photo.diary?.diary_idx}" 
+                    style="width:100%;cursor:pointer;border-radius:8px;" 
+                    alt="photo"
+                  />
+                  <p style="margin-top:8px; font-size:13px; color:#222;">
+                    ${address}
+                  </p>
+                </div>
+              `,
+            });
+
+            infoWindowRef.current?.close();
+            infoWindow.open(map, marker);
+            infoWindowRef.current = infoWindow;
+
+            google.maps.event.addListenerOnce(infoWindow, "domready", () => {
+              const img = document.querySelector(
+                `img[data-diary-id="${photo.diary?.diary_idx}"]`
+              );
+              if (img) {
+                img.addEventListener("click", () => {
+                  navigate(`/diary/${photo.diary?.diary_idx}`);
+                });
+              }
+            });
           });
         });
       });
