@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
+import DiaryList from "../components/DiaryList"; // ✅ 추가된 DiaryList import
 
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Pagination } from "swiper/modules";
@@ -94,14 +95,13 @@ function MainPage() {
     );
   };
 
-
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-[#fff] max-w-full sm:max-w-[420px] mx-auto px-2">
       <div className="px-2 pt-6">
         <h1 className="text-2xl font-bold text-gray-800">최근 여행 일기</h1>
       </div>
 
-      <main className="flex-1 overflow-y-auto px-0 py-4 space-y-6">
+      <main className="flex-1 overflow-y-scroll hide-scrollbar px-0 py-4 space-y-6">
         <Swiper
           modules={[Pagination]}
           spaceBetween={16}
@@ -110,39 +110,43 @@ function MainPage() {
           pagination={{
             clickable: true,
             bulletClass: "swiper-pagination-bullet custom-bullet",
-            bulletActiveClass: "swiper-pagination-bullet-active custom-bullet-active"
+            bulletActiveClass: "swiper-pagination-bullet-active custom-bullet-active",
           }}
           className="w-full pb-12"
           observer={true}
           observeParents={true}
           style={{ width: "100%" }}
         >
-          {(!isLoggedIn ? exampleDiaries : diaries).map(renderDiaryCard)}
+          {(isLoggedIn ? diaries : exampleDiaries).map(renderDiaryCard)}
         </Swiper>
 
-        {(!isLoggedIn || diaries.length === 0) && (
-          <div className="px-4">
-            <div
-              onClick={() => {
-                if (!isLoggedIn) {
-                  setShowLoginModal(true);
-                } else {
-                  navigate("/diarycreate");
-                }
-              }}
-              className="bg-blue-50 rounded-xl p-4 flex justify-between items-center shadow-md cursor-pointer"
+
+
+        {/* ✅ 로그인하지 않은 경우 로그인 유도 */}
+        {!isLoggedIn && (
+          <div className="text-center text-gray-600 px-4 space-y-4">
+            <p className="text-sm">일기를 보려면 로그인이 필요해요!</p>
+            <button
+              onClick={() => navigate("/login")}
+              className="bg-blue-500 text-white text-sm px-4 py-2 rounded-full hover:bg-blue-600"
             >
-              <p className="text-gray-800 font-semibold">
-                여행을 기록해볼까요?
-              </p>
-              <div className="bg-blue-500 text-white text-xl rounded-full w-9 h-9 flex items-center justify-center hover:bg-blue-600">
-                +
-              </div>
-            </div>
+              로그인하러 가기
+            </button>
           </div>
         )}
 
-        {isLoggedIn && diaries.length > 0 && (
+        {/* ✅ 로그인은 했지만 작성한 일기가 없는 경우 */}
+        {isLoggedIn && diaries.length === 0 && (
+          <div className="text-center text-gray-500 px-4 py-8">
+            <p className="text-sm">아직 작성된 일기가 없어요 📝</p>
+            <p className="text-sm text-blue-600 font-semibold mt-2">
+              첫 여행을 기록해보세요!
+            </p>
+          </div>
+        )}
+
+        {/* ✅ 일기 추가 버튼 */}
+        {isLoggedIn && (
           <div className="px-4">
             <div
               onClick={() => navigate("/diarycreate")}
@@ -156,9 +160,29 @@ function MainPage() {
               </div>
             </div>
           </div>
-
         )}
 
+        {/* ✅ DiaryList 추가 */}
+        {isLoggedIn && diaries.length > 0 && (
+          <DiaryList
+            diaries={diaries.map((d) => {
+              const date = new Date(d.trip_date);
+              return {
+                diary_idx: d.diary_idx, // ✅ 이거 꼭 추가!
+                day: date.getDate(),
+                month: date.toLocaleString("en-US", { month: "short" }).toUpperCase(),
+                year: date.getFullYear(),
+                content: d.diary_title,
+                image: d.file_name
+                  ? `http://localhost:5000/uploads/${d.file_name}`
+                  : "/default.jpg", // 없을 경우 대체 이미지
+              };
+            })}
+
+          />
+        )}
+
+        {/* ✅ 로그인 모달 */}
         {showLoginModal && (
           <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
             <div className="bg-white rounded-xl shadow-lg p-6 w-[320px] text-center">

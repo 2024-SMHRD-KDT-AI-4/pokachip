@@ -1,8 +1,15 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import {
+  RiHomeSmileLine,
+  RiImageAddLine,
+  RiMapPinLine,
+  RiUserSmileLine,
+} from 'react-icons/ri';
 
 function FooterNav() {
   const navigate = useNavigate();
+  const location = useLocation();
   const token = localStorage.getItem("token");
 
   const handleClick = (path, requireLogin = true) => {
@@ -10,42 +17,42 @@ function FooterNav() {
       toast.info("로그인이 필요합니다");
       return;
     }
-
     navigate(path);
   };
 
+  const isActive = (path) =>
+    location.pathname === path
+      ? "text-blue-500 hover:text-blue-600"
+      : "text-gray-600 hover:text-gray-800";
+
   return (
-    <nav className="bg-blue-100 p-2 flex justify-around items-center fixed bottom-0 w-full z-50">
-      {/* 📋 일기 작성 → 로그인 없이 가능 */}
+    <nav className="py-3 px-4 flex justify-around items-center fixed bottom-0 w-full z-50 bg-gray-100 shadow-md">
       <button
-        className="text-gray-600 hover:text-black"
-        onClick={() => handleClick("/diarycreate", false)}
+        className={`${isActive("/")} text-2xl`}
+        onClick={() => handleClick("/")}
       >
-        📋
+        <RiHomeSmileLine />
       </button>
 
-      {/* 🖼️ 갤러리 */}
       <button
-        className="text-gray-600 hover:text-black"
+        className={`${isActive("/gallery")} text-2xl`}
         onClick={() => handleClick("/gallery")}
       >
-        🖼️
+        <RiImageAddLine />
       </button>
 
-      {/* 🗺️ 지도 */}
       <button
-        className="text-gray-600 hover:text-black"
+        className={`${isActive("/map")} text-2xl`}
         onClick={() => handleClick("/map")}
       >
-        🗺️
+        <RiMapPinLine />
       </button>
 
-      {/* ⚙️ 마이페이지 */}
       <button
-        className="text-gray-600 hover:text-black"
+        className={`${isActive("/mypage")} text-2xl`}
         onClick={() => handleClick("/mypage")}
       >
-        ⚙️
+        <RiUserSmileLine />
       </button>
     </nav>
   );

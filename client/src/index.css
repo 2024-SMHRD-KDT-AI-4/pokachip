@@ -16,3 +16,14 @@
   background-color: rgba(0, 0, 0, 0.2);
   border-radius: 9999px;
 }
+
+
+
+/* 완전 숨기기 */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none; /* IE */
+  scrollbar-width: none;    /* Firefox */
+}

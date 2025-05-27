@@ -1,45 +1,41 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { RiLoginBoxLine, RiUserAddLine } from 'react-icons/ri'; // 아이콘 변경
 
 function Header() {
   const navigate = useNavigate();
-  const { isLoggedIn, logout, user } = useAuth();
-
-  const handleLogout = () => {
-    logout();
-    navigate(0); // ✅ 로그아웃 후 현재 페이지 soft reload → 마커 즉시 사라짐
-  };
+  const { isLoggedIn, user } = useAuth();
 
   return (
-    <header className="bg-blue-100 px-4 py-2 shadow-md sticky top-0 z-50">
+    <header className="px-4 py-2 sticky top-0 z-50 bg-white/70 backdrop-blur-sm">
       <div className="flex items-center justify-between">
         {/* ✅ 로고 클릭 시 홈으로 이동 */}
         <img
           src="/logo.png"
           alt="logo"
-          className="h-8 cursor-pointer"
+          className="h-14 cursor-pointer"
           onClick={() => navigate('/')}
         />
-        <div className="flex items-center gap-[10px]">
+        <div className="flex items-center gap-3">
           {isLoggedIn ? (
-            <>
-              <span className="text-sm text-gray-700">
-                {user?.user_name || '사용자'}님
-              </span>
-              <button
-                onClick={handleLogout}
-                className="text-sm text-red-500 font-semibold hover:underline"
-              >
-                로그아웃
-              </button>
-            </>
+            <span className="text-sm text-gray-700">
+              {user?.user_name || '사용자'}님
+            </span>
           ) : (
             <>
-              <button onClick={() => navigate('/login')} className="text-sm text-blue-700 font-semibold hover:underline">
-                로그인
+              <button
+                onClick={() => navigate('/login')}
+                className="text-gray-700 text-2xl hover:text-black"
+                aria-label="로그인"
+              >
+                <RiLoginBoxLine />
               </button>
-              <button onClick={() => navigate('/register')} className="text-sm text-blue-700 font-semibold hover:underline">
-                회원가입
+              <button
+                onClick={() => navigate('/register')}
+                className="text-gray-700 text-2xl hover:text-black"
+                aria-label="회원가입"
+              >
+                <RiUserAddLine />
               </button>
             </>
           )}
