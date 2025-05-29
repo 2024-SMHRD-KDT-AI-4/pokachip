@@ -5,7 +5,7 @@ const router = express.Router();
 const db = require("../db");
 const authenticateToken = require("../middleware/authenticateToken");
 
-// 1) 사진 업로드 (원래 코드, 건드리지 않음)
+// 1) 사진 업로드 (원래 코드, 절대 건드리지 마세요)
 router.post("/uploadPhoto", authenticateToken, async (req, res) => {
   console.log("🚀 [백엔드 수신] /uploadPhoto 요청 도착");
   const user_id = req.user.user_id;
@@ -31,7 +31,7 @@ router.post("/uploadPhoto", authenticateToken, async (req, res) => {
       `/uploads/${file_name}`,
       location,
       taken_at_mysql,
-      "",
+      "",   // tags는 나중에 분류 작업에서 채워집니다
       lat,
       lng,
     ]);
@@ -50,23 +50,27 @@ router.post("/uploadPhoto", authenticateToken, async (req, res) => {
   }
 });
 
-// 2) 로그인된 유저 사진 전체 조회 (photo_idx 포함, 반드시 lat/lng도 내려보냄)
+// 2) 로그인된 유저 사진 전체 조회 (photo_idx 포함, tags·lat·lng 모두 내려줍니다)
 router.get("/userPhotos", authenticateToken, async (req, res) => {
   if (!req.user || !req.user.user_id) {
     return res.status(401).json({ message: "인증 실패: 사용자 정보 없음" });
   }
-
   const user_id = req.user.user_id;
 
   try {
-    // 각 사진의 진짜 위경도(lat/lng) 정보를 select
     const [rows] = await db.execute(
       `
       SELECT 
-        p.photo_idx, p.file_name, p.taken_at,
-        p.lat, p.lng,   -- 반드시 포함!
+        p.photo_idx,
+        p.file_name,
+        p.taken_at,
+        p.tags,        -- 분류 결과(tags) 컬럼
+        p.lat,
+        p.lng,
         d.diary_idx,
-        d.diary_title, d.diary_content, d.trip_date
+        d.diary_title,
+        d.diary_content,
+        d.trip_date
       FROM photo_info p
       LEFT JOIN ai_diary_photos ap ON p.photo_idx = ap.photo_idx
       LEFT JOIN ai_diary_info d ON ap.diary_idx = d.diary_idx
@@ -75,7 +79,6 @@ router.get("/userPhotos", authenticateToken, async (req, res) => {
       [user_id]
     );
 
-    // 응답 객체 생성 (lat/lng가 null이면 마커 생성 안 함)
     const photos = rows
       .filter(r => r.lat !== null && r.lng !== null)
       .map((r) => ({
@@ -83,10 +86,11 @@ router.get("/userPhotos", authenticateToken, async (req, res) => {
         filePath: r.file_name.startsWith("/uploads/")
           ? r.file_name
           : `/uploads/${r.file_name}`,
+        tags: r.tags,                   // people, food, accommodation 등
         lat: parseFloat(r.lat),
         lng: parseFloat(r.lng),
         taken_at: r.taken_at,
-        diary: r.diary_title
+        diary: r.diary_idx
           ? {
               diary_idx: r.diary_idx,
               diary_title: r.diary_title,

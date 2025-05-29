@@ -32,6 +32,7 @@ export default function MapPage() {
   const [photos, setPhotos] = useState([]);
   const navigate = useNavigate();
 
+  // 1) 로그인된 유저 사진 불러오기
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return;
@@ -43,13 +44,15 @@ export default function MapPage() {
       .catch(console.error);
   }, []);
 
+  // 2) photos 변경 시마다 마커 갱신
   useEffect(() => {
-    if (!photos.length) return;
+    if (photos.length === 0) return;
 
     loadGoogleMapsScript().then(() => {
       const google = window.google;
       let map = mapInstance.current;
 
+      // 맵 생성 또는 재사용
       if (!map) {
         map = new google.maps.Map(mapRef.current, {
           center: { lat: 36.5, lng: 127.5 },
@@ -60,6 +63,7 @@ export default function MapPage() {
         google.maps.event.trigger(map, "resize");
       }
 
+      // 기존 마커/InfoWindow 제거
       markersRef.current.forEach((m) => m.setMap(null));
       markersRef.current = [];
       infoWindowRef.current?.close();
@@ -67,60 +71,66 @@ export default function MapPage() {
       const bounds = new google.maps.LatLngBounds();
       const geocoder = new google.maps.Geocoder();
 
-      // 좌표별로 같은 위치에 여러 장이 있다면, 마커끼리 오프셋 분산
+      // 동일 좌표 분산 로직
       const locCount = {};
-      photos.forEach((photo) => {
-        const key = `${photo.lat},${photo.lng}`;
+      photos.forEach((p) => {
+        const key = `${p.lat},${p.lng}`;
         locCount[key] = (locCount[key] || 0) + 1;
       });
       const locPlaced = {};
 
-      photos.forEach((photo, idx) => {
+      photos.forEach((photo) => {
         const lat = parseFloat(photo.lat);
         const lng = parseFloat(photo.lng);
         if (isNaN(lat) || isNaN(lng)) return;
 
         const key = `${lat},${lng}`;
         locPlaced[key] = (locPlaced[key] || 0) + 1;
-
-        // 오프셋을 같은 위치의 n번째 사진에만 적용
-        const offsetPixel = 0.00008; // 약 8m
         const count = locCount[key];
-        let markerLat = lat;
-        let markerLng = lng;
+        let markerLat = lat,
+          markerLng = lng;
         if (count > 1) {
-          // 가운데부터 양쪽으로 펴지도록 분산
           const i = locPlaced[key] - 1;
           const mid = (count - 1) / 2;
-          markerLat = lat + (i - mid) * offsetPixel;
-          markerLng = lng + (i - mid) * offsetPixel;
+          const offset = 0.00005;
+          markerLat = lat + (i - mid) * offset;
+          markerLng = lng + (i - mid) * offset;
         }
 
         const position = { lat: markerLat, lng: markerLng };
         bounds.extend(position);
 
+        // tags에 따라 아이콘 분기
+        let iconUrl = "/people.png";
+        if (photo.tags === "food") iconUrl = "/food.png";
+        else if (photo.tags === "accommodation")
+          iconUrl = "/accommodation.png";
+
         const marker = new google.maps.Marker({
           position,
           map,
+          icon: {
+            url: iconUrl,
+            scaledSize: new google.maps.Size(32, 32),
+          },
         });
         markersRef.current.push(marker);
 
+        // 마커 클릭 → 주소+사진 InfoWindow
         marker.addListener("click", () => {
-          // 1. 주소 정보 가져오기
           geocoder.geocode({ location: { lat, lng } }, (results, status) => {
             let address = "주소 정보를 찾을 수 없습니다";
-            if (status === "OK" && results && results[0]) {
+            if (status === "OK" && results[0]) {
               address = results[0].formatted_address;
             }
 
-            // 2. InfoWindow: 사진 + 주소 표시
             const infoWindow = new google.maps.InfoWindow({
               content: `
                 <div style="text-align:center; max-width:220px;">
-                  <img 
-                    src="http://localhost:5000${photo.filePath}" 
-                    data-diary-id="${photo.diary?.diary_idx}" 
-                    style="width:100%;cursor:pointer;border-radius:8px;" 
+                  <img
+                    src="http://localhost:5000${photo.filePath}"
+                    data-diary-id="${photo.diary?.diary_idx}"
+                    style="width:100%; cursor:pointer; border-radius:8px;"
                     alt="photo"
                   />
                   <p style="margin-top:8px; font-size:13px; color:#222;">
@@ -134,23 +144,23 @@ export default function MapPage() {
             infoWindow.open(map, marker);
             infoWindowRef.current = infoWindow;
 
-            google.maps.event.addListenerOnce(infoWindow, "domready", () => {
-              const img = document.querySelector(
-                `img[data-diary-id="${photo.diary?.diary_idx}"]`
-              );
-              if (img) {
-                img.addEventListener("click", () => {
+            google.maps.event.addListenerOnce(
+              infoWindow,
+              "domready",
+              () => {
+                const img = document.querySelector(
+                  `img[data-diary-id="${photo.diary?.diary_idx}"]`
+                );
+                img?.addEventListener("click", () => {
                   navigate(`/diary/${photo.diary?.diary_idx}`);
                 });
               }
-            });
+            );
           });
         });
       });
 
-      if (!bounds.isEmpty()) {
-        map.fitBounds(bounds);
-      }
+      map.fitBounds(bounds);
     });
   }, [photos, navigate]);
 
