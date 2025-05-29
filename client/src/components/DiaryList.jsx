@@ -5,7 +5,7 @@ function DiaryList({ diaries }) {
     const navigate = useNavigate();
 
     return (
-        <div className="px-4 py-4 space-y-8 max-h-full">
+<div className="px-4 py-4 space-y-8 max-h-full">
             {diaries.map((diary, idx) => {
                 const isEven = idx % 2 === 1;
                 const diaryId = diary.diary_idx;
@@ -21,27 +21,26 @@ function DiaryList({ diaries }) {
                             <img
                                 src={diary.image}
                                 alt="thumbnail"
-                                className={`absolute -top-6 ${isEven ? 'left-4' : 'right-4'} w-28 h-28 object-cover rounded-lg shadow-md border z-10`}
+                                className={`absolute -top-6 ${isEven ? 'left-4' : 'right-4'
+                                    } w-28 h-28 object-cover rounded-lg shadow-md border z-10`}
                             />
                         )}
 
-                        {/* ✅ 이미지 옆에 날짜 배치 */}
+                        {/* ✅ 날짜 */}
                         <div
-                            className={`absolute top-2 ${isEven ? 'left-36 text-left' : 'right-36 text-right'}`}
+                            className={`absolute top-1 ${isEven ? 'left-36 text-left' : 'right-36 text-right'
+                                }`}
                         >
                             <p className="text-2xl font-bold text-gray-900">{diary.day}</p>
                             <div className="flex gap-1 text-xs uppercase text-gray-400">
                                 <span>{diary.month}</span>
                                 <span>{diary.year}</span>
                             </div>
-                            
                         </div>
 
                         {/* ✅ 텍스트 박스 */}
                         <div
-                            className={`mt-4 w-[100%] bg-white rounded-xl shadow-md px-6 py-5 ${isEven
-                                    ? 'mr-auto ml-4 text-right'
-                                    : 'ml-auto mr-4 text-left'
+                            className={`mt-4 mb-0 w-[100%] bg-white rounded-xl shadow-md px-6 py-5 ${isEven ? 'pl-24 text-right' : 'pr-24 text-left'
                                 }`}
                         >
                             <p className="text-base font-semibold text-gray-800 mb-1">
@@ -52,11 +51,9 @@ function DiaryList({ diaries }) {
                             </p>
                         </div>
                     </div>
-
                 );
             })}
         </div>
-
 
 
 
