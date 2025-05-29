@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Pagination } from 'swiper/modules';
@@ -8,6 +8,7 @@ import 'swiper/css/pagination';
 
 function DiaryView() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [diary, setDiary] = useState(null);
   const [photos, setPhotos] = useState([]);
 
@@ -47,7 +48,7 @@ function DiaryView() {
       <div className="sticky top-0 z-20 bg-white px-4 pt-4 pb-2 flex items-center justify-between shadow-sm">
         <button
           className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 text-xl font-bold flex items-center justify-center shadow-sm transition"
-          onClick={() => alert('리스트로 이동 예정')}
+          onClick={() => navigate(-1)}
         >
           ←
         </button>
