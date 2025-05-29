@@ -18,9 +18,7 @@ function Header() {
         />
         <div className="flex items-center gap-3">
           {isLoggedIn ? (
-            <span className="text-sm text-gray-700">
-              {user?.user_name || '사용자'}님
-            </span>
+            null
           ) : (
             <>
               <button

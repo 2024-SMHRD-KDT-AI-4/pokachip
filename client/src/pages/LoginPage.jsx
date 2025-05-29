@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { GoogleOAuthProvider, useGoogleLogin } from "@react-oauth/google";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
+import { FaArrowLeftLong } from "react-icons/fa6";
 
 const initKakao = () => {
   if (window.Kakao && !window.Kakao.isInitialized()) {
@@ -23,14 +24,18 @@ const loginToBackend = async (userInfo, login, navigate, setError) => {
     console.log("백엔드 응답:", res.data);
 
     if (res.data.token) {
-      login(res.data.token, res.data.user); // ✅ 수정된 부분
+      login(res.data.token, res.data.user);
       navigate("/");
     }
   } catch (err) {
-    console.error(err);
-    setError("로그인에 실패했습니다.");
+    console.error("로그인 실패:", err);
+
+    // ✅ 백엔드에서 전달한 에러 메시지 추출
+    const msg = err.response?.data?.error || "로그인에 실패했습니다.";
+    setError(msg); // 프론트 모달에 정확히 전달
   }
 };
+
 
 function LoginPageInner() {
   const navigate = useNavigate();
@@ -40,6 +45,15 @@ function LoginPageInner() {
   useEffect(() => {
     initKakao();
   }, []);
+
+  // ✅ 에러 확인 버튼 클릭 시 동작 분기
+  const handleErrorConfirm = () => {
+    if (error.includes("회원이 아닙니다")) {
+      navigate("/register");
+    } else {
+      setError("");
+    }
+  };
 
   const googleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
@@ -107,9 +121,10 @@ function LoginPageInner() {
 
       <button
         onClick={() => navigate(-1)}
-        className="absolute top-4 left-4 text-gray-600 text-sm"
+        className="absolute top-4 left-4 text-gray-600 text-2xl"
+        aria-label="뒤로가기"
       >
-        ← 뒤로가기
+        <FaArrowLeftLong />
       </button>
 
       <h2 className="text-2xl font-bold mb-8 text-gray-800">로그인</h2>
@@ -133,9 +148,8 @@ function LoginPageInner() {
           </span>
         </button>
 
-        {error && <p className="text-sm text-red-500 text-center">{error}</p>}
-
         <div className="text-center mt-4">
+          <p className="text-sm text-gray-600">회원이 아니신가요?</p>
           <button
             onClick={() => navigate("/register")}
             className="text-sm text-blue-600 font-semibold hover:underline mt-1"
@@ -144,6 +158,23 @@ function LoginPageInner() {
           </button>
         </div>
       </div>
+
+      {/* ✅ 에러 모달 */}
+      {error && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-lg p-6 w-80 text-center">
+            <p className="whitespace-pre-line break-keep text-black-600 font-semibold mb-4">
+              {error}
+            </p>
+            <button
+              onClick={handleErrorConfirm}
+              className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              확인
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

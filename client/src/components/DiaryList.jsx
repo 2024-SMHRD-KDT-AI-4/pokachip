@@ -2,60 +2,65 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
 function DiaryList({ diaries }) {
-  const navigate = useNavigate();
+    const navigate = useNavigate();
 
-  return (
-    <div className="px-4 py-4 space-y-8 max-h-full">
-      {diaries.map((diary, idx) => {
-        const isEven = idx % 2 === 1;
+    return (
+        <div className="px-4 py-4 space-y-8 max-h-full">
+            {diaries.map((diary, idx) => {
+                const isEven = idx % 2 === 1;
+                const diaryId = diary.diary_idx;
 
-        // ✅ diary.diary_idx만 사용하도록 수정
-        const diaryId = diary.diary_idx;
+                return (
+                    <div
+                        key={diaryId || idx}
+                        onClick={() => navigate(`/diary/${diaryId}`)}
+                        className="relative w-full min-h-[200px] py-6 cursor-pointer"
+                    >
+                        {/* ✅ 이미지 */}
+                        {diary.image && (
+                            <img
+                                src={diary.image}
+                                alt="thumbnail"
+                                className={`absolute -top-6 ${isEven ? 'left-4' : 'right-4'} w-28 h-28 object-cover rounded-lg shadow-md border z-10`}
+                            />
+                        )}
 
-        // ✅ console로 확인
-        console.log("✅ diaryId:", diaryId, diary);
+                        {/* ✅ 이미지 옆에 날짜 배치 */}
+                        <div
+                            className={`absolute top-2 ${isEven ? 'left-36 text-left' : 'right-36 text-right'}`}
+                        >
+                            <p className="text-2xl font-bold text-gray-900">{diary.day}</p>
+                            <div className="flex gap-1 text-xs uppercase text-gray-400">
+                                <span>{diary.month}</span>
+                                <span>{diary.year}</span>
+                            </div>
+                            
+                        </div>
 
-        return (
-          <div
-            key={diaryId || idx}
-            onClick={() => navigate(`/diary/${diaryId}`)}
-            className={`relative bg-white rounded-xl shadow-md py-4 px-5 cursor-pointer hover:shadow-lg transition ${
-              isEven ? 'pl-24 text-right' : 'pr-24 text-left'
-            }`}
-          >
-            {/* 썸네일 이미지 */}
-            {diary.image && (
-              <img
-                src={diary.image}
-                alt="thumbnail"
-                className={`absolute top-[-10px] w-16 h-16 object-cover rounded-xl shadow-md border-2 border-white ${
-                  isEven ? 'left-4' : 'right-4'
-                }`}
-              />
-            )}
+                        {/* ✅ 텍스트 박스 */}
+                        <div
+                            className={`mt-4 w-[100%] bg-white rounded-xl shadow-md px-6 py-5 ${isEven
+                                    ? 'mr-auto ml-4 text-right'
+                                    : 'ml-auto mr-4 text-left'
+                                }`}
+                        >
+                            <p className="text-base font-semibold text-gray-800 mb-1">
+                                “{diary.title}”
+                            </p>
+                            <p className="text-sm text-gray-600 whitespace-pre-line">
+                                {diary.content}
+                            </p>
+                        </div>
+                    </div>
 
-            {/* 날짜 */}
-            <div
-              className={`flex items-baseline gap-2 ${
-                isEven ? 'justify-end' : 'justify-start'
-              }`}
-            >
-              <p className="text-xl font-bold text-gray-900">{diary.day}</p>
-              <div className="flex flex-col text-[11px] leading-none text-gray-400 uppercase">
-                <span>{diary.month}</span>
-                <span>{diary.year}</span>
-              </div>
-            </div>
+                );
+            })}
+        </div>
 
-            {/* 내용 */}
-            <p className="text-sm text-gray-700 mt-2 line-clamp-2">
-              “{diary.content}”
-            </p>
-          </div>
-        );
-      })}
-    </div>
-  );
+
+
+
+    );
 }
 
 export default DiaryList;

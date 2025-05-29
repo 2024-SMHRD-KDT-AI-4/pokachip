@@ -195,7 +195,10 @@ const getAllDiariesByUser = async (req, res) => {
   const user_id = req.user.user_id;
   try {
     const [rows] = await pool.query(
-      `SELECT d.diary_idx, d.diary_title, d.trip_date,
+      `SELECT d.diary_idx,
+              d.diary_title,
+              d.diary_content, -- ✅ 본문 내용 추가
+              d.trip_date,
               (
                 SELECT p.file_name
                   FROM ai_diary_photos dp
