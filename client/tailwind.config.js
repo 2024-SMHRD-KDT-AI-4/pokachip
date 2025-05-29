@@ -7,7 +7,7 @@ export default {
   ],
   theme: {
     fontFamily: {
-      sans: ['Nanum Gothic', 'sans-serif'], // ✅ 기본 폰트 변경
+      sans: ['Pretendard-Regular', 'sans-serif'], // ✅ 기본 폰트 변경
     },
     extend: {},
   },
