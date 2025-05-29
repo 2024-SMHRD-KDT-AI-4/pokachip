@@ -5,7 +5,7 @@ const router = express.Router();
 const db = require("../db");
 const authenticateToken = require("../middleware/authenticateToken");
 
-// 1) 사진 업로드 (원래 코드, 절대 건드리지 마세요)
+// 1) 사진 업로드 (기존 코드, 절대 수정 금지)
 router.post("/uploadPhoto", authenticateToken, async (req, res) => {
   console.log("🚀 [백엔드 수신] /uploadPhoto 요청 도착");
   const user_id = req.user.user_id;
@@ -16,11 +16,11 @@ router.post("/uploadPhoto", authenticateToken, async (req, res) => {
   }
 
   const sql = `
-    INSERT INTO photo_info (user_id, file_name, exif_loc, taken_at, tags, lat, lng)
+    INSERT INTO photo_info 
+      (user_id, file_name, exif_loc, taken_at, tags, lat, lng)
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `;
   const location = `위도:${lat}, 경도:${lng}`;
-
   const date = new Date(taken_at);
   date.setHours(date.getHours() + 9);
   const taken_at_mysql = date.toISOString().slice(0, 19).replace("T", " ");
@@ -31,7 +31,7 @@ router.post("/uploadPhoto", authenticateToken, async (req, res) => {
       `/uploads/${file_name}`,
       location,
       taken_at_mysql,
-      "",   // tags는 나중에 분류 작업에서 채워집니다
+      "",    // tags는 나중에 AI 분류나 수동 입력에 의해 채워집니다
       lat,
       lng,
     ]);
@@ -50,7 +50,7 @@ router.post("/uploadPhoto", authenticateToken, async (req, res) => {
   }
 });
 
-// 2) 로그인된 유저 사진 전체 조회 (photo_idx 포함, tags·lat·lng 모두 내려줍니다)
+// 2) 로그인된 유저 사진 전체 조회 (tags, lat, lng 모두 내려줌)
 router.get("/userPhotos", authenticateToken, async (req, res) => {
   if (!req.user || !req.user.user_id) {
     return res.status(401).json({ message: "인증 실패: 사용자 정보 없음" });
@@ -64,7 +64,7 @@ router.get("/userPhotos", authenticateToken, async (req, res) => {
         p.photo_idx,
         p.file_name,
         p.taken_at,
-        p.tags,        -- 분류 결과(tags) 컬럼
+        p.tags,        -- people, food, landscape, accommodation
         p.lat,
         p.lng,
         d.diary_idx,
@@ -81,12 +81,12 @@ router.get("/userPhotos", authenticateToken, async (req, res) => {
 
     const photos = rows
       .filter(r => r.lat !== null && r.lng !== null)
-      .map((r) => ({
+      .map(r => ({
         photoIdx: r.photo_idx,
         filePath: r.file_name.startsWith("/uploads/")
           ? r.file_name
           : `/uploads/${r.file_name}`,
-        tags: r.tags,                   // people, food, accommodation 등
+        tags: r.tags || "people",      // 기본 people
         lat: parseFloat(r.lat),
         lng: parseFloat(r.lng),
         taken_at: r.taken_at,

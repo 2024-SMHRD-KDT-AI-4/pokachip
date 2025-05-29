@@ -39,8 +39,8 @@ export default function MapPage() {
     fetch("http://localhost:5000/userPhotos", {
       headers: { Authorization: `Bearer ${token}` },
     })
-      .then((res) => res.json())
-      .then((data) => setPhotos(data))
+      .then(res => res.json())
+      .then(setPhotos)
       .catch(console.error);
   }, []);
 
@@ -64,47 +64,46 @@ export default function MapPage() {
       }
 
       // 기존 마커/InfoWindow 제거
-      markersRef.current.forEach((m) => m.setMap(null));
+      markersRef.current.forEach(m => m.setMap(null));
       markersRef.current = [];
       infoWindowRef.current?.close();
 
       const bounds = new google.maps.LatLngBounds();
       const geocoder = new google.maps.Geocoder();
 
-      // 동일 좌표 분산 로직
+      // 동일 위치 다중 사진 분산
       const locCount = {};
-      photos.forEach((p) => {
+      photos.forEach(p => {
         const key = `${p.lat},${p.lng}`;
         locCount[key] = (locCount[key] || 0) + 1;
       });
       const locPlaced = {};
 
-      photos.forEach((photo) => {
+      photos.forEach(photo => {
         const lat = parseFloat(photo.lat);
         const lng = parseFloat(photo.lng);
         if (isNaN(lat) || isNaN(lng)) return;
 
         const key = `${lat},${lng}`;
         locPlaced[key] = (locPlaced[key] || 0) + 1;
+        let markerLat = lat, markerLng = lng;
         const count = locCount[key];
-        let markerLat = lat,
-          markerLng = lng;
         if (count > 1) {
           const i = locPlaced[key] - 1;
           const mid = (count - 1) / 2;
-          const offset = 0.00005;
-          markerLat = lat + (i - mid) * offset;
-          markerLng = lng + (i - mid) * offset;
+          const off = 0.00005; // 약 5m
+          markerLat = lat + (i - mid) * off;
+          markerLng = lng + (i - mid) * off;
         }
 
         const position = { lat: markerLat, lng: markerLng };
         bounds.extend(position);
 
-        // tags에 따라 아이콘 분기
+        // tags에 따라 아이콘 결정
         let iconUrl = "/people.png";
-        if (photo.tags === "food") iconUrl = "/food.png";
-        else if (photo.tags === "accommodation")
-          iconUrl = "/accommodation.png";
+        if (photo.tags === "food")           iconUrl = "/food.png";
+        else if (photo.tags === "landscape") iconUrl = "/landscape.png";
+        else if (photo.tags === "accommodation") iconUrl = "/accommodation.png";
 
         const marker = new google.maps.Marker({
           position,
@@ -116,7 +115,7 @@ export default function MapPage() {
         });
         markersRef.current.push(marker);
 
-        // 마커 클릭 → 주소+사진 InfoWindow
+        // 마커 클릭 → 주소 + 사진 InfoWindow
         marker.addListener("click", () => {
           geocoder.geocode({ location: { lat, lng } }, (results, status) => {
             let address = "주소 정보를 찾을 수 없습니다";
@@ -144,18 +143,14 @@ export default function MapPage() {
             infoWindow.open(map, marker);
             infoWindowRef.current = infoWindow;
 
-            google.maps.event.addListenerOnce(
-              infoWindow,
-              "domready",
-              () => {
-                const img = document.querySelector(
-                  `img[data-diary-id="${photo.diary?.diary_idx}"]`
-                );
-                img?.addEventListener("click", () => {
-                  navigate(`/diary/${photo.diary?.diary_idx}`);
-                });
-              }
-            );
+            google.maps.event.addListenerOnce(infoWindow, "domready", () => {
+              const img = document.querySelector(
+                `img[data-diary-id="${photo.diary?.diary_idx}"]`
+              );
+              img?.addEventListener("click", () => {
+                navigate(`/diary/${photo.diary?.diary_idx}`);
+              });
+            });
           });
         });
       });
