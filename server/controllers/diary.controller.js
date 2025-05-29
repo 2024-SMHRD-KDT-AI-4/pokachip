@@ -1,12 +1,11 @@
 require("dotenv").config();
 const axios = require("axios");
-const fs = require("fs");
-const path = require("path");
-const ExifParser = require("exif-parser");
 const pool = require("../db");
+const { extractExifData } = require("../utils/exifUtil");
+
 const OPENAI_API_KEY = process.env.GPT_API_KEY;
 
-// ✅ 1) 사진 + 메타데이터 기반 GPT 일기 생성 (사용자 기능 포함)
+// ✅ 1) 사진 + 메타데이터 기반 GPT 일기 생성
 const generateDiaryFromImage = async (req, res) => {
   const user_id = req.user?.user_id || req.body.user_id;
   const { companion, feeling, length, tone, weather } = req.body;
@@ -17,43 +16,7 @@ const generateDiaryFromImage = async (req, res) => {
   }
 
   try {
-    const dateList = [];
-    const locationList = []; // GPT용 텍스트
-    const gpsList = [];      // DB용 위도/경도 좌표
-
-    const imageMessages = imageFiles.map((file) => {
-      const imagePath = path.join(__dirname, "../uploads", file.filename);
-      const imageBuffer = fs.readFileSync(imagePath);
-      const imageBase64 = imageBuffer.toString("base64");
-
-      try {
-        const parser = ExifParser.create(imageBuffer);
-        const result = parser.parse();
-
-        if (result.tags.DateTimeOriginal) {
-          dateList.push(new Date(result.tags.DateTimeOriginal * 1000));
-        }
-
-        if (result.tags.GPSLatitude && result.tags.GPSLongitude) {
-          const lat = parseFloat(result.tags.GPSLatitude);
-          const lng = parseFloat(result.tags.GPSLongitude);
-          gpsList.push({ lat, lng });
-          locationList.push(`위도 ${lat}, 경도 ${lng}`);
-        } else {
-          gpsList.push({ lat: null, lng: null });
-        }
-      } catch (err) {
-        console.warn("EXIF 추출 실패:", err.message);
-        gpsList.push({ lat: null, lng: null });
-      }
-
-      return {
-        type: "image_url",
-        image_url: {
-          url: `data:image/jpeg;base64,${imageBase64}`,
-        },
-      };
-    });
+    const { dateList, gpsList, locationList, imageMessages } = extractExifData(imageFiles);
 
     // 날짜 처리
     let tripDateStr, tripDateDB;
@@ -70,7 +33,6 @@ const generateDiaryFromImage = async (req, res) => {
 
     const locationInfo = locationList.length > 0 ? locationList.join(", ") : "";
 
-    // ✅ GPT 프롬프트 (2번째 스타일)
     const promptText = `
 너는 여행 감성 일기 작가야. 아래 조건과 사진들을 참고해서 여행 일기를 작성해줘. 다음 사항을 반드시 지켜줘:
 
@@ -96,7 +58,6 @@ const generateDiaryFromImage = async (req, res) => {
 - 말투 스타일: ${tone}
     `.trim();
 
-    // ✅ GPT API 호출 (정상 방식)
     const messages = [
       {
         role: "system",
@@ -133,7 +94,6 @@ const generateDiaryFromImage = async (req, res) => {
     const conn = await pool.getConnection();
     await conn.beginTransaction();
 
-    // ✅ 일기 저장
     const [dRes] = await conn.query(
       `INSERT INTO ai_diary_info (user_id, diary_title, diary_content, trip_date)
        VALUES (?, ?, ?, ?)`,
@@ -141,7 +101,6 @@ const generateDiaryFromImage = async (req, res) => {
     );
     const diary_idx = dRes.insertId;
 
-    // ✅ 사진 저장
     for (let i = 0; i < imageFiles.length; i++) {
       const file = imageFiles[i];
       const { lat, lng } = gpsList[i];
@@ -165,7 +124,6 @@ const generateDiaryFromImage = async (req, res) => {
     await conn.commit();
     conn.release();
 
-    // ✅ Flask 서버에 태그 분류 요청
     try {
       await axios.post("http://localhost:6006/classify");
       console.log("✔️ Flask 서버로 분류 요청 전송 완료");
@@ -184,8 +142,7 @@ const generateDiaryFromImage = async (req, res) => {
   }
 };
 
-
-// 기존 팀원 기능 (유지)
+// 기존 기능 유지
 const getDiaryById = async (req, res) => {
   const diaryId = req.params.id;
   try {
@@ -265,7 +222,6 @@ const getAllDiariesByUser = async (req, res) => {
   }
 };
 
-// ✅ export
 module.exports = {
   generateDiaryFromImage,
   getDiaryById,
