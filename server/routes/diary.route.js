@@ -39,5 +39,8 @@ router.get("/photo/:photoIdx", authenticateToken, diaryController.getDiaryByPhot
 // GET /api/diary/
 router.get("/", authenticateToken, diaryController.getAllDiariesByUser);
 
+// ✅ 5) 일기 삭제
+router.delete("/:id", authenticateToken, diaryController.deleteDiary);
+
 
 module.exports = router;

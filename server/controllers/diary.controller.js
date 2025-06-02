@@ -16,7 +16,7 @@ const generateDiaryFromImage = async (req, res) => {
   }
 
   try {
-    const { dateList, gpsList, locationList, imageMessages } = extractExifData(imageFiles);
+    const { dateList, gpsList, locationList, imageMessages } = await extractExifData(imageFiles);
 
     // 날짜 처리
     let tripDateStr, tripDateDB;
@@ -31,8 +31,7 @@ const generateDiaryFromImage = async (req, res) => {
       tripDateDB = tripDateStr;
     }
 
-    const locationInfo = locationList.length > 0 ? locationList.join(", ") : "";
-
+    // 🔧 일기 본문에 위도/경도 정보 포함 안 되도록 locationInfo 제외
     const promptText = `
 너는 여행 감성 일기 작가야. 아래 조건과 사진들을 참고해서 여행 일기를 작성해줘. 다음 사항을 반드시 지켜줘:
 
@@ -49,7 +48,6 @@ const generateDiaryFromImage = async (req, res) => {
 - 발랄한 말투: 반말을 사용하고, 귀엽고 톡톡 튀는 여자아이 말투로 써줘. 너무 과하지 않게!
 - 유머러스한 말투: 반말을 사용하고, 요즘 밈이나 말장난, 웃긴 표현이 자연스럽게 들어가게 해줘.
 
-- 촬영 위치: ${locationInfo || "정보 없음"}
 - 날짜: ${tripDateStr}
 - 동반자: ${companion}
 - 기분: ${feeling}
@@ -109,7 +107,7 @@ const generateDiaryFromImage = async (req, res) => {
         `INSERT INTO photo_info 
            (user_id, file_name, exif_loc, taken_at, tags, lat, lng)
          VALUES (?, ?, ?, NOW(), '', ?, ?)`,
-        [user_id, file.filename, locationInfo, lat, lng]
+        [user_id, file.filename, "", lat, lng]
       );
 
       const photo_idx = pRes.insertId;
@@ -197,7 +195,7 @@ const getAllDiariesByUser = async (req, res) => {
     const [rows] = await pool.query(
       `SELECT d.diary_idx,
               d.diary_title,
-              d.diary_content, -- ✅ 본문 내용 추가
+              d.diary_content,
               d.trip_date,
               (
                 SELECT p.file_name
@@ -226,7 +224,6 @@ const getAllDiariesByUser = async (req, res) => {
 };
 
 const getRandomDiariesByUser = async (req, res) => {
-
   const user_id = req.user?.user_id;
 
   if (!user_id) {
@@ -255,13 +252,9 @@ const getRandomDiariesByUser = async (req, res) => {
       [user_id]
     );
 
-
-
-    
-
     if (rows.length === 0) {
       console.warn("⚠️ 랜덤 일기 결과 없음. 빈 배열 반환");
-      return res.status(200).json([]); // ❗ 404 말고 그냥 빈 배열
+      return res.status(200).json([]);
     }
 
     return res.json(rows);
@@ -271,10 +264,63 @@ const getRandomDiariesByUser = async (req, res) => {
   }
 };
 
+// ✅ 5. 일기 삭제
+const deleteDiary = async (req, res) => {
+  const diaryId = req.params.id;
+  const user_id = req.user?.user_id || req.body.user_id;
+
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    // 1. 관련된 photo_idx 가져오기
+    const [photoRows] = await conn.query(
+      `SELECT p.photo_idx
+       FROM ai_diary_photos ap
+       JOIN photo_info p ON ap.photo_idx = p.photo_idx
+       WHERE ap.diary_idx = ? AND p.user_id = ?`,
+      [diaryId, user_id]
+    );
+    const photoIdxList = photoRows.map(row => row.photo_idx);
+
+    // 2. ai_diary_photos에서 삭제
+    await conn.query(
+      `DELETE FROM ai_diary_photos WHERE diary_idx = ?`,
+      [diaryId]
+    );
+
+    // 3. photo_info에서 삭제
+    if (photoIdxList.length > 0) {
+      await conn.query(
+        `DELETE FROM photo_info WHERE photo_idx IN (?) AND user_id = ?`,
+        [photoIdxList, user_id]
+      );
+    }
+
+    // 4. ai_diary_info에서 삭제
+    await conn.query(
+      `DELETE FROM ai_diary_info WHERE diary_idx = ? AND user_id = ?`,
+      [diaryId, user_id]
+    );
+
+    await conn.commit();
+    res.json({ message: "일기 삭제 성공" });
+  } catch (err) {
+    await conn.rollback();
+    console.error("일기 삭제 실패:", err);
+    res.status(500).json({ error: "일기 삭제 실패" });
+  } finally {
+    conn.release();
+  }
+};
+
+
+
 module.exports = {
   generateDiaryFromImage,
   getDiaryById,
   getDiaryByPhotoIdx,
   getAllDiariesByUser,
   getRandomDiariesByUser,
+  deleteDiary,
 };
