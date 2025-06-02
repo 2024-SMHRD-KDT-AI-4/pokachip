@@ -80,7 +80,7 @@ function MyPage() {
                     onClick={() => {
                         localStorage.removeItem('user');
                         alert("로그아웃 되었습니다.");
-                        window.location.href = '/login';
+                        window.location.href = '/';
                     }}
                     className="text-sm px-4 py-2 border border-gray-300 rounded-xl text-gray-500 hover:text-blue-500 hover:border-blue-300 transition mb-4"
                 >

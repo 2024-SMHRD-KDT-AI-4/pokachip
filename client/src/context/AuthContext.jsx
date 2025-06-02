@@ -5,7 +5,7 @@ const AuthContext = createContext();
 export function AuthProvider({ children }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null); // ✅ 추가
+  const [token, setToken] = useState(null);
 
   const login = (newToken, userInfo) => {
     if (!userInfo || !userInfo.user_id || !userInfo.user_name) {
@@ -15,29 +15,29 @@ export function AuthProvider({ children }) {
 
     localStorage.setItem("token", newToken);
     localStorage.setItem("user", JSON.stringify(userInfo));
-    setIsLoggedIn(true);
+    setToken(newToken);
     setUser(userInfo);
-    setToken(newToken); // ✅ 추가
+    setIsLoggedIn(true);
   };
 
   const logout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    setIsLoggedIn(false);
+    setToken(null);
     setUser(null);
-    setToken(null); // ✅ 추가
+    setIsLoggedIn(false);
   };
 
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
     const storedUser = localStorage.getItem("user");
 
-    if (storedToken && storedUser) {
+    if (storedToken && storedUser && storedToken !== "null" && storedToken !== "undefined") {
       try {
         const parsedUser = JSON.parse(storedUser);
-        setIsLoggedIn(true);
+        setToken(storedToken);
         setUser(parsedUser);
-        setToken(storedToken); // ✅ 추가
+        setIsLoggedIn(true);
       } catch (err) {
         console.warn("user 파싱 오류", err);
       }
@@ -45,9 +45,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   return (
-    <AuthContext.Provider
-      value={{ isLoggedIn, user, token, login, logout }} // ✅ token 포함
-    >
+    <AuthContext.Provider value={{ isLoggedIn, user, token, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

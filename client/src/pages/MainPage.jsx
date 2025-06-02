@@ -142,14 +142,10 @@ function MainPage() {
           centeredSlides={true}
           loop={true}
           autoplay={{
-            delay: 2000,
+            delay: 1000,
             disableOnInteraction: false,
           }}
-          pagination={{
-            clickable: true,
-            bulletClass: "swiper-pagination-bullet custom-bullet",
-            bulletActiveClass: "swiper-pagination-bullet-active custom-bullet-active",
-          }}
+          
           className="w-full pb-12"
           observer={true}
           observeParents={true}
