@@ -1,9 +1,25 @@
 const fs = require("fs");
 const path = require("path");
+const axios = require("axios");
 const ExifParser = require("exif-parser");
+require("dotenv").config(); // ✅ 환경변수 불러오기
 
-// ✅ EXIF 정보 + 이미지 base64 추출 함수
-const extractExifData = (imageFiles) => {
+// ✅ 위도, 경도로 주소 정보 가져오기 (Google Maps API)
+const reverseGeocode = async (lat, lng) => {
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+  const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`;
+  try {
+    const res = await axios.get(url);
+    const place = res.data.results?.[0]?.formatted_address || null;
+    return place;
+  } catch (err) {
+    console.warn("📍 장소 이름 변환 실패:", err.message);
+    return null;
+  }
+};
+
+// ✅ EXIF 정보 + 이미지 base64 추출 함수 (async 버전)
+const extractExifData = async (imageFiles) => {
   const dateList = [];
   const gpsList = [];
   const locationList = [];
@@ -30,7 +46,11 @@ const extractExifData = (imageFiles) => {
         lat = parseFloat(lat);
         lng = parseFloat(lng);
         gpsList.push({ lat, lng });
-        locationList.push(`위도 ${lat}, 경도 ${lng}`); // 이 부분을 프롬프트에 넣지 않으려면 controller에서 제거하면 됩니다
+
+        const placeName = await reverseGeocode(lat, lng);
+        if (placeName) {
+          locationList.push(placeName); // ✅ 위경도 대신 장소 이름만 추가
+        }
       } else {
         gpsList.push({ lat: null, lng: null });
       }

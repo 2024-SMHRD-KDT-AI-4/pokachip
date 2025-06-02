@@ -31,7 +31,8 @@ const generateDiaryFromImage = async (req, res) => {
       tripDateDB = tripDateStr;
     }
 
-    // 🔧 일기 본문에 위도/경도 정보 포함 안 되도록 locationInfo 제외
+    const locationInfo = locationList.length > 0 ? locationList.join(", ") : "";
+
     const promptText = `
 너는 여행 감성 일기 작가야. 아래 조건과 사진들을 참고해서 여행 일기를 작성해줘. 다음 사항을 반드시 지켜줘:
 
@@ -48,6 +49,7 @@ const generateDiaryFromImage = async (req, res) => {
 - 발랄한 말투: 반말을 사용하고, 귀엽고 톡톡 튀는 여자아이 말투로 써줘. 너무 과하지 않게!
 - 유머러스한 말투: 반말을 사용하고, 요즘 밈이나 말장난, 웃긴 표현이 자연스럽게 들어가게 해줘.
 
+- 촬영 위치: ${locationInfo || "정보 없음"}
 - 날짜: ${tripDateStr}
 - 동반자: ${companion}
 - 기분: ${feeling}
@@ -107,7 +109,7 @@ const generateDiaryFromImage = async (req, res) => {
         `INSERT INTO photo_info 
            (user_id, file_name, exif_loc, taken_at, tags, lat, lng)
          VALUES (?, ?, ?, NOW(), '', ?, ?)`,
-        [user_id, file.filename, "", lat, lng]
+        [user_id, file.filename, locationInfo, lat, lng]
       );
 
       const photo_idx = pRes.insertId;
@@ -195,7 +197,7 @@ const getAllDiariesByUser = async (req, res) => {
     const [rows] = await pool.query(
       `SELECT d.diary_idx,
               d.diary_title,
-              d.diary_content,
+              d.diary_content, -- ✅ 본문 내용 추가
               d.trip_date,
               (
                 SELECT p.file_name
@@ -224,6 +226,7 @@ const getAllDiariesByUser = async (req, res) => {
 };
 
 const getRandomDiariesByUser = async (req, res) => {
+
   const user_id = req.user?.user_id;
 
   if (!user_id) {
@@ -252,9 +255,13 @@ const getRandomDiariesByUser = async (req, res) => {
       [user_id]
     );
 
+
+
+
+
     if (rows.length === 0) {
       console.warn("⚠️ 랜덤 일기 결과 없음. 빈 배열 반환");
-      return res.status(200).json([]);
+      return res.status(200).json([]); // ❗ 404 말고 그냥 빈 배열
     }
 
     return res.json(rows);
