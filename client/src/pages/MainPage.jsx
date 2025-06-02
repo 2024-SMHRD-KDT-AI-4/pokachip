@@ -5,7 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import DiaryList from "../components/DiaryList";
 
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Pagination } from "swiper/modules";
+import { Autoplay, Pagination } from "swiper/modules"; // ✅ 자동 슬라이드 모듈 추가
 import "swiper/css";
 import "swiper/css/pagination";
 
@@ -13,6 +13,7 @@ function MainPage() {
   const navigate = useNavigate();
   const { isLoggedIn, token } = useAuth();
   const [diaries, setDiaries] = useState([]);
+  const [randomDiaries, setRandomDiaries] = useState([]); // ✅ 랜덤 일기 상태 추가
   const [showLoginModal, setShowLoginModal] = useState(false);
 
   useEffect(() => {
@@ -25,8 +26,34 @@ function MainPage() {
         .catch((err) => {
           console.error("일기 목록 불러오기 실패:", err);
         });
+
+      // ✅ 랜덤 일기 요청
+      axios
+        .get("http://localhost:5000/api/diary/randomlist", {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .then((res) => {
+          console.log("✅ 랜덤 일기 응답:", res.data);
+          setRandomDiaries(res.data);
+          
+        })
+        .catch((err) => {
+          console.error("랜덤 일기 불러오기 실패:", err);
+          
+        });
     }
   }, [isLoggedIn]);
+
+
+  // ① 랜덤 일기 state 변화 감시
+  useEffect(() => {
+    console.log("👉 randomDiaries 변경됨:", randomDiaries);
+  }, [randomDiaries]);
+
+  // ② 전체 일기 state 변화 감시
+  useEffect(() => {
+    console.log("👉 diaries 변경됨:", diaries);
+  }, [diaries]);
 
   const exampleDiaries = [
     {
@@ -50,6 +77,7 @@ function MainPage() {
   };
 
   const renderDiaryCard = (data, idx) => {
+
     const { day, month, year } = formatDate(data.date || data.trip_date);
     const title = data.title || data.diary_title;
     const fileName = data.file_name;
@@ -64,6 +92,8 @@ function MainPage() {
         setShowLoginModal(true);
         return;
       }
+
+
       navigate(`/diary/${diaryId}`);
     };
 
@@ -98,15 +128,21 @@ function MainPage() {
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-[#fff] max-w-full mx-auto px-2">
       <div className="px-2 pt-6">
-        <h1 className="text-2xl font-bold text-gray-800">최근 여행 일기</h1>
+        <h1 className="text-2xl font-bold text-gray-800">나의 여행 일기</h1>
       </div>
 
       <main className="flex-1 overflow-y-scroll hide-scrollbar px-0 py-4 space-y-8">
+        {/* ✅ 랜덤 일기 카드 Swiper */}
         <Swiper
-          modules={[Pagination]}
+          modules={[Pagination, Autoplay]}
           spaceBetween={16}
           slidesPerView={1.0}
           centeredSlides={true}
+          loop={true}
+          autoplay={{
+            delay: 2000,
+            disableOnInteraction: false,
+          }}
           pagination={{
             clickable: true,
             bulletClass: "swiper-pagination-bullet custom-bullet",
@@ -117,7 +153,10 @@ function MainPage() {
           observeParents={true}
           style={{ width: "100%" }}
         >
-          {(isLoggedIn ? diaries : exampleDiaries).map(renderDiaryCard)}
+          {(isLoggedIn && randomDiaries.length > 0
+            ? randomDiaries
+            : exampleDiaries
+          ).map(renderDiaryCard)}
         </Swiper>
 
         {!isLoggedIn && (
@@ -158,7 +197,7 @@ function MainPage() {
         )}
 
         {isLoggedIn && diaries.length > 0 && (
-          <div className="mt-8"> {/* ✅ 마진 추가 */}
+          <div className="mt-8">
             <DiaryList
               diaries={diaries.map((d) => {
                 const date = new Date(d.trip_date);
@@ -177,7 +216,6 @@ function MainPage() {
             />
           </div>
         )}
-
 
         {showLoginModal && (
           <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">

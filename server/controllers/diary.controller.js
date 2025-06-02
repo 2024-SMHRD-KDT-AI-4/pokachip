@@ -225,9 +225,56 @@ const getAllDiariesByUser = async (req, res) => {
   }
 };
 
+const getRandomDiariesByUser = async (req, res) => {
+
+  const user_id = req.user?.user_id;
+
+  if (!user_id) {
+    console.warn("❌ user_id가 없음. 인증 실패 처리.");
+    return res.status(401).json({ message: "사용자 인증 실패" });
+  }
+
+  try {
+    const [rows] = await pool.query(
+      `SELECT d.diary_idx,
+          d.diary_title,
+          d.diary_content,
+          d.trip_date,
+          (
+            SELECT p.file_name
+            FROM ai_diary_photos dp
+            LEFT JOIN photo_info p ON dp.photo_idx = p.photo_idx
+            WHERE dp.diary_idx = d.diary_idx
+            ORDER BY dp.created_at ASC
+            LIMIT 1
+          ) AS file_name
+   FROM ai_diary_info d
+   WHERE d.user_id = ?
+   ORDER BY RAND()
+   LIMIT 3`,
+      [user_id]
+    );
+
+
+
+    
+
+    if (rows.length === 0) {
+      console.warn("⚠️ 랜덤 일기 결과 없음. 빈 배열 반환");
+      return res.status(200).json([]); // ❗ 404 말고 그냥 빈 배열
+    }
+
+    return res.json(rows);
+  } catch (err) {
+    console.error("❌ 쿼리 실패:", err);
+    return res.status(500).json({ message: "랜덤 일기 조회 실패" });
+  }
+};
+
 module.exports = {
   generateDiaryFromImage,
   getDiaryById,
   getDiaryByPhotoIdx,
   getAllDiariesByUser,
+  getRandomDiariesByUser,
 };

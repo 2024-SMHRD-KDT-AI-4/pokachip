@@ -101,7 +101,7 @@ export default function MapPage() {
 
         // tags에 따라 아이콘 결정
         let iconUrl = "/people.png";
-        if (photo.tags === "food")           iconUrl = "/food.png";
+        if (photo.tags === "food") iconUrl = "/food.png";
         else if (photo.tags === "landscape") iconUrl = "/landscape.png";
         else if (photo.tags === "accommodation") iconUrl = "/accommodation.png";
 
@@ -160,13 +160,14 @@ export default function MapPage() {
   }, [photos, navigate]);
 
   return (
-    <div className="p-4">
+
+<div className="p-4">
       <h2 className="text-lg font-bold mb-4">🗺️ 여행 지도</h2>
       <div
         ref={mapRef}
         style={{
           width: "100%",
-          height: "400px",
+          height: "750px",
           borderRadius: "12px",
           marginTop: "1rem",
         }}

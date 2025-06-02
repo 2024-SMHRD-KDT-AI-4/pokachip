@@ -24,6 +24,9 @@ router.post(
   diaryController.generateDiaryFromImage
 );
 
+router.get("/randomlist", authenticateToken, diaryController.getRandomDiariesByUser);
+
+
 // 2) 일기 ID로 조회
 router.get("/:id", authenticateToken, diaryController.getDiaryById);
 
@@ -31,8 +34,10 @@ router.get("/:id", authenticateToken, diaryController.getDiaryById);
 router.get("/photo/:photoIdx", authenticateToken, diaryController.getDiaryByPhotoIdx);
 
 
+
 // 4) 로그인한 사용자의 전체 일기 목록 조회
 // GET /api/diary/
 router.get("/", authenticateToken, diaryController.getAllDiariesByUser);
+
 
 module.exports = router;
