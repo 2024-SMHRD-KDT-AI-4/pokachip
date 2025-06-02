@@ -33,7 +33,7 @@ function GalleryFolder() {
     <div className="p-4 max-w-[420px] mx-auto">
       <div className="flex items-center mb-4">
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => navigate('/gallery')}
           className="text-blue-500 font-semibold mr-2"
         >
           ← 뒤로가기

@@ -1,13 +1,31 @@
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
 import axios from 'axios';
-import DiarySlidePanel from './DiarySlidePanel'; // 다음 단계에서 만들 예정
+import DiarySlidePanel from './DiarySlidePanel';
+import {
+  HiOutlineArrowLeft,
+  HiOutlineDotsVertical,
+} from 'react-icons/hi';
+import FolderSelectModal from './FolderSelectModal';
+import { useNavigate, useParams } from 'react-router-dom';
+
+const tagLabels = {
+  people: '인물',
+  landscape: '풍경',
+  food: '음식',
+  accommodation: '숙소',
+};
 
 function PhotoModal({ photo, onClose }) {
   const [diary, setDiary] = useState(null);
+  const [showUI, setShowUI] = useState(true);
+  const [showMenu, setShowMenu] = useState(false);
+  const [showFolderSelect, setShowFolderSelect] = useState(false);
+
+  const { tag } = useParams(); // 현재 폴더 이름
+  const navigate = useNavigate();
 
   useEffect(() => {
-    if (!photo) return;
+    if (!photo?.photo_idx) return;
 
     axios
       .get(`http://localhost:5000/api/diary/photo/${photo.photo_idx}`, {
@@ -22,26 +40,95 @@ function PhotoModal({ photo, onClose }) {
       });
   }, [photo]);
 
+  const handleFolderMove = async (newTag) => {
+    try {
+      await axios.put(`http://localhost:5000/api/gallery/${photo.photo_idx}/move`, {
+        newTag,
+      });
+
+      // alert(`✅ '${tagLabels[newTag]}' 폴더로 이동했습니다.`);
+      onClose(); // 모달 닫기
+      navigate(`/gallery/${newTag}`); // 새 폴더 페이지로 이동
+    } catch (err) {
+      console.error('❌ 폴더 이동 실패:', err);
+      alert('폴더 이동에 실패했습니다.');
+    }
+  };
+
+  if (!photo) return null;
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex flex-col items-center justify-center">
-      <button
-        onClick={onClose}
-        className="absolute top-4 right-4 text-white text-2xl font-bold"
-      >
-        ✕
-      </button>
+    <div
+      className="fixed inset-0 bg-black z-50 flex flex-col items-center justify-start"
+      onClick={() => setShowUI(!showUI)}
+    >
+      {/* 상단 네비게이션 */}
+      {showUI && (
+        <div className="w-full flex justify-between items-center px-4 py-3 text-white absolute top-0 z-10">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
+          >
+            <HiOutlineArrowLeft size={24} />
+          </button>
 
-      <img
-        src={`http://localhost:5000/uploads/${photo.file_name}`}
-        alt="fullscreen"
-        className="max-w-full max-h-[70%] rounded-lg shadow-lg"
-      />
+          <div className="relative">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowMenu((prev) => !prev);
+              }}
+            >
+              <HiOutlineDotsVertical size={22} />
+            </button>
 
-      {/* 슬라이드 일기 영역 */}
-      <DiarySlidePanel diary={diary} />
+            {showMenu && (
+              <div
+                className="absolute right-0 mt-2 w-36 bg-white text-black text-sm rounded shadow z-20"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                  onClick={() => {
+                    setShowFolderSelect(true);
+                    setShowMenu(false);
+                  }}
+                >
+                  폴더 변경
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 이미지 */}
+      <div className="flex-1 flex items-center justify-center">
+        <img
+          src={`http://localhost:5000/uploads/${photo.file_name}`}
+          alt="fullscreen"
+          className="max-w-full max-h-full object-contain"
+        />
+      </div>
+
+      {/* 일기 슬라이드 패널 */}
+      <DiarySlidePanel diary={diary} showHandle={showUI} />
+
+      {/* 폴더 선택 모달 */}
+      {showFolderSelect && (
+        <FolderSelectModal
+          currentTag={tag}
+          onClose={() => setShowFolderSelect(false)}
+          onSelect={(newTag) => {
+            setShowFolderSelect(false);
+            handleFolderMove(newTag); // 태그 변경 및 이동
+          }}
+        />
+      )}
     </div>
   );
 }
 
 export default PhotoModal;
-

@@ -58,3 +58,29 @@ exports.getPhotosByTag = async (req, res) => {
     res.status(500).json({ error: '서버 오류' });
   }
 };
+// ✅ 사진의 태그 변경
+exports.updatePhotoTag = async (req, res) => {
+  const { photo_idx } = req.params;
+  const { newTag } = req.body;
+
+  if (!newTag) {
+    return res.status(400).json({ error: '변경할 태그(newTag)가 필요합니다.' });
+  }
+
+  try {
+    const [result] = await pool.query(
+      `UPDATE photo_info SET tags = ? WHERE photo_idx = ?`,
+      [newTag, photo_idx]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: '해당 사진이 존재하지 않습니다.' });
+    }
+
+    res.json({ message: '태그가 성공적으로 변경되었습니다.' });
+  } catch (err) {
+    console.error('📛 태그 변경 오류:', err);
+    res.status(500).json({ error: '서버 오류' });
+  }
+};
+
