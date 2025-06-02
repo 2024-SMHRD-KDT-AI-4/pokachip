@@ -11,15 +11,14 @@ function DiaryView() {
   const navigate = useNavigate();
   const [diary, setDiary] = useState(null);
   const [photos, setPhotos] = useState([]);
+  const [showModal, setShowModal] = useState(false); // 삭제 모달
 
   useEffect(() => {
     async function fetchDiary() {
       try {
-        const token = localStorage.getItem("token"); // ✅ 토큰 꺼내오기
+        const token = localStorage.getItem("token");
         const res = await axios.get(`http://localhost:5000/api/diary/${id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`, // ✅ 헤더에 토큰 포함
-          },
+          headers: { Authorization: `Bearer ${token}` },
         });
         setDiary(res.data.diary);
         setPhotos(res.data.photos);
@@ -30,7 +29,7 @@ function DiaryView() {
     fetchDiary();
   }, [id]);
 
-  // 📌 날짜를 'YYYY-MM-DD' 형식으로 변환
+  // 날짜 포맷
   function formatDate(dateString) {
     const date = new Date(dateString);
     const yyyy = date.getFullYear();
@@ -39,12 +38,34 @@ function DiaryView() {
     return `${yyyy}-${mm}-${dd}`;
   }
 
+  // 삭제 실행
+  const handleDeleteConfirm = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.delete(`http://localhost:5000/api/diary/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      // ✅ 삭제 성공 시: 알림 후 메인페이지로 이동
+      if (res.status === 200) {
+        alert("삭제가 완료되었습니다.");
+        navigate("/"); // 메인페이지로 이동
+      }
+    } catch (error) {
+      // ❌ 삭제 실패 시: 알림만 띄우고 모달만 닫기
+      console.error("삭제 실패:", error);
+      alert("삭제에 실패했습니다.");
+      setShowModal(false); // 모달 닫기
+    }
+  };
+
+
   if (!diary) return <p className="text-center mt-10">일기를 불러오는 중입니다...</p>;
 
   return (
     <div className="min-h-screen bg-white max-w-[420px] mx-auto font-[Pretendard-Regular] relative">
 
-      {/* 🔙 상단 고정 바 */}
+      {/* 🔙 상단 바 */}
       <div className="sticky top-0 z-20 bg-white px-4 pt-4 pb-2 flex items-center justify-between shadow-sm">
         <button
           className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 text-xl font-bold flex items-center justify-center shadow-sm transition"
@@ -52,10 +73,12 @@ function DiaryView() {
         >
           ←
         </button>
-        <h2 className="text-lg font-bold text-gray-800 mx-auto absolute left-1/2 -translate-x-1/2">📓 나의 여행 일기</h2>
+        <h2 className="text-lg font-bold text-gray-800 mx-auto absolute left-1/2 -translate-x-1/2">
+          📓 나의 여행 일기
+        </h2>
       </div>
 
-      {/* 📸 모든 사진을 정사각형으로 캐러셀 */}
+      {/* 📸 사진 캐러셀 */}
       {photos.length > 0 && (
         <div className="w-full aspect-square mb-4">
           <Swiper
@@ -84,20 +107,52 @@ function DiaryView() {
       <div className="px-6 pb-10 text-center">
         <h3 className="text-xl font-bold mb-1">{diary.diary_title}</h3>
 
-        {/* 📅 날짜 포맷 표시 */}
         <p className="text-sm text-gray-500 mb-4">
           {diary.trip_date.includes("~")
             ? diary.trip_date
             : formatDate(diary.trip_date)}
         </p>
 
-        {/* 아이콘 영역 (임시 비움) */}
+        {/* 아이콘 영역 (비워둠) */}
         <div className="flex justify-center gap-6 mb-6 h-6"></div>
 
-        <div className="text-gray-800 whitespace-pre-line leading-relaxed">
+        <div className="text-gray-800 whitespace-pre-line leading-relaxed mb-8">
           {diary.diary_content}
         </div>
+
+        {/* 🗑 삭제 버튼 (디자인 반영) */}
+        <div className="flex justify-center">
+          <button
+            className="border border-gray-400 text-gray-500 rounded-full px-6 py-2 text-sm transition-colors duration-200 hover:border-sky-500 hover:text-sky-500"
+            onClick={() => setShowModal(true)}
+          >
+            일기 삭제하기
+          </button>
+        </div>
       </div>
+
+      {/* ❗ 삭제 확인 모달 */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex justify-center items-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg text-center max-w-sm">
+            <p className="mb-4 font-semibold text-gray-800">정말 삭제하시겠습니까?</p>
+            <div className="flex justify-center gap-4">
+              <button
+                className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400"
+                onClick={() => setShowModal(false)}
+              >
+                아니오
+              </button>
+              <button
+                className="bg-sky-500 text-white px-4 py-2 rounded hover:bg-sky-600"
+                onClick={handleDeleteConfirm}
+              >
+                네
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

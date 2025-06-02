@@ -12,6 +12,7 @@ function DiaryCreate() {
   const [tone, setTone] = useState('감성적인');
   const [weather, setWeather] = useState('');
   const [showOptions, setShowOptions] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); // ✅ 로딩 상태 추가
 
   const userData = localStorage.getItem('user');
   let userEmail = null;
@@ -43,14 +44,16 @@ function DiaryCreate() {
     formData.append('tone', tone);
     formData.append('weather', weather);
 
+    setIsLoading(true); // ✅ 로딩 시작
+
     try {
-      const token = localStorage.getItem('token'); // ✅ 토큰 꺼내오기
+      const token = localStorage.getItem('token');
       const res = await axios.post(
         'http://localhost:5000/api/diary/image-generate',
         formData,
         {
           headers: {
-            Authorization: `Bearer ${token}`, // ✅ 토큰 포함
+            Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -61,9 +64,10 @@ function DiaryCreate() {
     } catch (err) {
       console.error('일기 생성 실패:', err);
       alert('GPT 호출 실패');
+    } finally {
+      setIsLoading(false); // ✅ 로딩 종료
     }
   };
-
 
   const SelectionGroup = ({ title, options, selected, onSelect }) => (
     <div className="mb-6 bg-white p-4 rounded-xl shadow-md">
@@ -190,6 +194,20 @@ function DiaryCreate() {
           ✨ 일기 생성하기
         </button>
       </div>
+
+      {/* 로딩 모달 */}
+      {isLoading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white">
+          <div className="bg-white p-6 rounded-xl shadow-lg flex flex-col items-center justify-center">
+            <img
+              src="/logo.png"
+              alt="Loading..."
+              className="w-16 h-16 mb-4 animate-logo-bounce"
+            />
+            <p className="text-gray-700 text-lg font-semibold">일기를 생성 중입니다...</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

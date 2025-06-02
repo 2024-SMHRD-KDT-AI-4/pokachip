@@ -1,0 +1,452 @@
+[33mcommit 64e381e01d68bf51408beb1ce6dc662866c1ecc6[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Merge: 9064740 f8edd7e
+Author: SMJ <m1nxii126@gmail.com>
+Date:   Thu May 29 15:05:52 2025 +0900
+
+    Merge branch 'main' of https://github.com/2024-SMHRD-KDT-AI-4/pokachip
+
+[33mcommit f8edd7efda1cf5203c34bc7fb6fe3bd9a9efb9a5[m
+Author: 전석현 <drchun2@naver.com>
+Date:   Thu May 29 15:05:26 2025 +0900
+
+    15:05 못말리는 팀장의 다이어리뷰
+
+[33mcommit 906474016fcc426e1469db714873e68fd6fb9903[m
+Merge: c326e83 2634d5f
+Author: SMJ <m1nxii126@gmail.com>
+Date:   Thu May 29 14:50:56 2025 +0900
+
+    Merge branch 'main' of https://github.com/2024-SMHRD-KDT-AI-4/pokachip
+
+[33mcommit c326e83801b0e918c560b08cf473d6954011cdae[m
+Author: SMJ <m1nxii126@gmail.com>
+Date:   Thu May 29 14:50:55 2025 +0900
+
+    14:50 뒤로가기 이전페이지로
+
+[33mcommit 2634d5fbc4fb582ee184a68245697b3794841d0d[m
+Author: 전석현 <drchun2@naver.com>
+Date:   Thu May 29 14:33:18 2025 +0900
+
+    14:32 유틸 폴더 및 exifUtil.js 생성
+
+[33mcommit ed7d388d6a54911ac598308a343576faa140e357[m
+Author: 전석현 <drchun2@naver.com>
+Date:   Thu May 29 10:32:21 2025 +0900
+
+    0529 10:32 프롬프트 마커 분리 전 커밋
+
+[33mcommit 4c3aa171f03811e370c6d3b80dcf5b2436a95bdb[m
+Author: SMJ <m1nxii126@gmail.com>
+Date:   Tue May 27 17:24:17 2025 +0900
+
+    17:23 프롬프트 수정
+
+[33mcommit 5f63d628d60abe8730e4a7cf1eff3d0d2f20a814[m
+Author: 조 제 현 <jojehyun@naver.comgit config --global user.email jojehyun@naver.com>
+Date:   Tue May 27 15:55:50 2025 +0900
+
+    15:55 마커사진에 주소표시
+
+[33mcommit 0ec39fdd227ebba47546c8786bc213364136f269[m
+Author: 조 제 현 <jojehyun@naver.comgit config --global user.email jojehyun@naver.com>
+Date:   Tue May 27 15:45:47 2025 +0900
+
+    15:45 마커 복수개 등장
+
+[33mcommit d0817d01c748b8c66eb753617c0f219bb558716d[m
+Author: YEJ <yooej1210@gmail.com>
+Date:   Tue May 27 15:44:21 2025 +0900
+
+    15:44 임시 로그아웃버튼
+
+[33mcommit b27996b5f7788af1e05726a3e47d33feb13911c9[m
+Author: YEJ <yooej1210@gmail.com>
+Date:   Tue May 27 15:25:16 2025 +0900
+
+    15:25 일기 리스트 구현
+
+[33mcommit bd8b3ed07811f32384e1c6f0c1ae5df5b251cf8b[m
+Author: 전석현 <drchun2@naver.com>
+Date:   Tue May 27 11:29:43 2025 +0900
+
+    11:29 사진 클릭시 일기 이동
+
+[33mcommit f21375216be58ab2b9a962a672fbd295892d44c5[m
+Author: dw <rlaehdnjs714@gmail.com>
+Date:   Tue May 27 11:19:12 2025 +0900
+
+    11:19 갤러리
+
+[33mcommit 2f02faaea2895c0522a8ed090155dc2ebfe21a33[m
+Author: 전석현 <drchun2@naver.com>
+Date:   Tue May 27 10:48:20 2025 +0900
+
+    10:48 지도 날리기
+
+[33mcommit 3afcdc21948271eb69675e0a9769d5aa430e377a[m
+Author: YEJ <yooej1210@gmail.com>
+Date:   Tue May 27 09:40:15 2025 +0900
+
+    09:40 map 연결 수정
+
+[33mcommit 3bc11f43e3931bc46bb1d5cae9c9ec93a3b5b137[m
+Author: YEJ <yooej1210@gmail.com>
+Date:   Tue May 27 09:01:51 2025 +0900
+
+    09:01 메인페이지 자질구레 수정
+
+[33mcommit 2e930cab8034ba152d55834a23461b6bf5b9de68[m
+Author: YEJ <yooej1210@gmail.com>
+Date:   Tue May 27 08:43:03 2025 +0900
+
+    08:42 메인페이지 일기 연동
+
+[33mcommit bc8f8186faa332a54695971a612c5f3c2d10e82e[m
+Author: YEJ <yooej1210@gmail.com>
+Date:   Tue May 27 08:24:42 2025 +0900
+
+    08:24 메인페이지수정
+
+[33mcommit 6c03bb5e9e98693a59274fcef5d51a766251c5d8[m
+Author: SMJ <m1nxii126@gmail.com>
+Date:   Mon May 26 17:41:28 2025 +0900
+
+    17:40 마이페이지
+
+[33mcommit 46781e7a1862854bc11fdbbc606d7b36fb0b9712[m
+Author: 전석현 <drchun2@naver.com>
+Date:   Mon May 26 16:09:26 2025 +0900
+
+    16:08 지도에서 일기 띄우기 기능 부활
+
+[33mcommit 1f0fbeb2573998883d24306f562deca00fc0f82f[m
+Author: 전석현 <drchun2@naver.com>
+Date:   Mon May 26 15:58:59 2025 +0900
+
+    15:58 메인지도 -> 지도페이지 이동
+
+[33mcommit 1d801f1f854d8f10d667bfeb41854b0f58b9484c[m
+Author: 전석현 <drchun2@naver.com>
+Date:   Mon May 26 15:36:46 2025 +0900
+
+    15:36 갤러리 주소 확인 및 메인지도 오류 수정 중
+
+[33mcommit ae807d2fdc1ff29d1f4b938d47ea231c9fb5903b[m
+Author: 전석현 <drchun2@naver.com>
+Date:   Mon May 26 14:39:31 2025 +0900
+
+    14:39 갤러리 복구 완료
+
+[33mcommit d06be786a1fa309297a982948dafa85bb3d6abc6[m
+Author: 전석현 <drchun2@naver.com>
+Date:   Mon May 26 12:41:40 2025 +0900
+
+    12:41 photomap 분리 및 여행일기 지도 구현
+
+[33mcommit c08ff3c713ee76c6ed3227c0f63b59ea76649b5e[m
+Author: 전석현 <drchun2@naver.com>
+Date:   Mon May 26 10:47:10 2025 +0900
+
+    10:46  일기 기존 기능 + UI 병합
+
+[33mcommit cfc6ca2091d05b1f75cdfac33fdfa92f54604320[m
+Author: dw <rlaehdnjs714@gmail.com>
+Date:   Mon May 26 10:30:43 2025 +0900
+
+    10:30 갤러리
+
+[33mcommit 1dca02587be356c375a6aab517e18af8e6163933[m
+Author: 전석현 <drchun2@naver.com>
+Date:   Fri May 23 16:25:50 2025 +0900
+
+    16:25 일기생성 프론트 변경
+
+[33mcommit 385a620e47440a3550c24845aa927d2916a8a73b[m
+Author: 조 제 현 <jojehyun@naver.comgit config --global user.email jojehyun@naver.com>
+Date:   Fri May 23 15:12:40 2025 +0900
+
+    15:12 일기생성 및 마커에 일기표시
+
+[33mcommit 9374b5bca19598065783984f0352a5ddf275bb03[m
+Author: 전석현 <drchun2@naver.com>
+Date:   Fri May 23 12:30:25 2025 +0900
+
+    12:29 짜잘짜잘한 로그인 오류 해결
+
+[33mcommit 123d94478fa763a6e2f7686672a7b26d5daf5914[m
+Author: 전석현 <drchun2@naver.com>
+Date:   Fri May 23 12:09:02 2025 +0900
+
+    12:08 일기 및 toast 기능 병합
+
+[33mcommit 693f82af11fc4c365b0b3e8eafdd642883edfe45[m
+Author: 전석현 <drchun2@naver.com>
+Date:   Fri May 23 12:03:41 2025 +0900
+
+    12:03 toast문구
+
+[33mcommit 6445d4858ff9644fde02c2c17a0e89da428418ca[m
+Author: 전석현 <drchun2@naver.com>
+Date:   Fri May 23 11:33:03 2025 +0900
+
+    11:32 로그인 필요 문구 toast 변경
+
+[33mcommit ceea929e54d40002efb069ea5ff4f86512edde4a[m
+Author: 조 제 현 <jojehyun@naver.comgit config --global user.email jojehyun@naver.com>
+Date:   Fri May 23 10:28:53 2025 +0900
+
+    10:28 사진 클릭 시 일기내용표시
+
+[33mcommit 925c9288f7d31a388c4aa765c98d5e0d35f8ffad[m
+Author: 조 제 현 <jojehyun@naver.comgit config --global user.email jojehyun@naver.com>
+Date:   Fri May 23 10:11:04 2025 +0900
+
+    지도마커 사진미표기 오류수정
+
+[33mcommit fd88d93f95398fec11b79be661227261cc636fa2[m
+Author: SMJ <m1nxii126@gmail.com>
+Date:   Fri May 23 09:36:49 2025 +0900
+
+    9:36 지피티풀었습니당
+
+[33mcommit 37991bbc7b124439421c1923ed58dea172e2f5a9[m
+Author: 전석현 <drchun2@naver.com>
+Date:   Thu May 22 17:14:55 2025 +0900
+
+    17:12 로그아웃 후 초기화면 전환
+
+[33mcommit 2bccf6617701f520c6629d3fca4395a0589c3c7d[m
+Author: 조 제 현 <jojehyun@naver.comgit config --global user.email jojehyun@naver.com>
+Date:   Thu May 22 16:58:10 2025 +0900
+
+    16:57 로그인 시 지도마커 표시
+
+[33mcommit 5bcc79ae5f2148b317d0de91989a6b745f88ba9e[m
+Author: SMJ <m1nxii126@gmail.com>
+Date:   Thu May 22 10:50:16 2025 +0900
+
+    일기1차완료
+
+[33mcommit 503546d18e57f6daa767d13c65eb633737d8fab5[m
+Author: 전석현 <drchun2@naver.com>
+Date:   Wed May 21 16:57:55 2025 +0900
+
+    16:57 일기 아이콘 다시 라우터 연결
+
+[33mcommit 580b755cc04d3b88801de250e642c0b108b459a5[m
+Author: 전석현 <drchun2@naver.com>
+Date:   Wed May 21 16:43:32 2025 +0900
+
+    16:43 오류 수정 완료
+
+[33mcommit ccb0372dae2299d88ed48bcbc26f5fb37e7a91f9[m
+Author: 전석현 <drchun2@naver.com>
+Date:   Wed May 21 15:36:25 2025 +0900
+
+    15:36 프론트 오류 수정
+
+[33mcommit c9b2faccb05ce37be264ab8eeea5de21c142a588[m
+Author: 전석현 <drchun2@naver.com>
+Date:   Wed May 21 14:50:07 2025 +0900
+
+    14:49 로그인 오류 수정 중
+
+[33mcommit 4278bf3fd1e32765e668b6c52c59c3989170d8ec[m
+Author: 전석현 <drchun2@naver.com>
+Date:   Wed May 21 13:52:58 2025 +0900
+
+    13:51 사용자 -> 내 이름 띄우기
+
+[33mcommit c985b02d48075658765b4136bb2c86fc706100ac[m
+Author: 전석현 <drchun2@naver.com>
+Date:   Wed May 21 12:27:32 2025 +0900
+
+    12:26 login 사진업로드 DB 연동 구현
+
+[33mcommit fb698d09511bf39ebfe8aa02c68ef98171de501f[m
+Author: 조 제 현 <jojehyun@naver.comgit config --global user.email jojehyun@naver.com>
+Date:   Wed May 21 11:32:21 2025 +0900
+
+    지도마커 디자인 변경
+
+[33mcommit 401e35723aa62c3efb2dce976c6b2dad65dd9297[m
+Author: YEJ <yooej1210@gmail.com>
+Date:   Wed May 21 11:04:20 2025 +0900
+
+    11:04 카카오 로그인 오류 수정
+
+[33mcommit 4ae058ec049a78ee50c9f692ae54e1e884b03d87[m
+Author: YEJ <yooej1210@gmail.com>
+Date:   Wed May 21 10:56:59 2025 +0900
+
+    10:56 로그인,회원가입기능 구현
+
+[33mcommit e56efb893f9a81e743ccdf2a5445ff2f1076eb1e[m
+Author: SMJ <m1nxii126@gmail.com>
+Date:   Wed May 21 10:32:43 2025 +0900
+
+    10:31 test
+
+[33mcommit 8a2e47569b4208499c2a94bdc73551f3ee951107[m
+Author: 조 제 현 <jojehyun@naver.comgit config --global user.email jojehyun@naver.com>
+Date:   Wed May 21 10:30:34 2025 +0900
+
+    10:30 최종수정본?
+
+[33mcommit 341d985bf65ae939419b2a0a5d7104f1f8c6e2fd[m
+Merge: 828b15d ef97132
+Author: SMJ <m1nxii126@gmail.com>
+Date:   Wed May 21 10:10:43 2025 +0900
+
+    Merge branch 'main' of https://github.com/2024-SMHRD-KDT-AI-4/pokachip
+
+[33mcommit 828b15da13102bd3b7e1c58eda42392db69028fb[m
+Author: SMJ <m1nxii126@gmail.com>
+Date:   Wed May 21 10:10:42 2025 +0900
+
+    10:10 아이콘이동+일기생성다듬기
+
+[33mcommit ef971327612c6aee716cd1a163e73b2e8fc3fc94[m
+Author: 전석현 <drchun2@naver.com>
+Date:   Wed May 21 09:26:21 2025 +0900
+
+    09:25 05.21 db 시간 수정
+
+[33mcommit 62a61e3c0f4104b2dba37d552f6201d6c1ee45c1[m
+Author: 전석현 <drchun2@naver.com>
+Date:   Tue May 20 17:39:51 2025 +0900
+
+    17:39 오류 수정
+
+[33mcommit c1765cc1efbe964e48b557d7532ac8250b1fcf66[m
+Author: 전석현 <drchun2@naver.com>
+Date:   Tue May 20 16:56:48 2025 +0900
+
+    16:56 사진 업로드 배포용 구현
+
+[33mcommit b74acda4ac6a40a48e8f7ba4b58784f86d288055[m
+Author: 전석현 <drchun2@naver.com>
+Date:   Tue May 20 16:21:36 2025 +0900
+
+    16:21 중간저장
+
+[33mcommit 7fa1b1a4f5b8f950936de6c85c2d26f6be9a856d[m
+Author: 전석현 <drchun2@naver.com>
+Date:   Tue May 20 15:06:40 2025 +0900
+
+    15:06 사진 DB연동 2번째
+
+[33mcommit 983dc33323b29fec22305f0d56436173bc15e170[m
+Author: 전석현 <drchun2@naver.com>
+Date:   Tue May 20 14:57:33 2025 +0900
+
+    14:57 사진 업로드 DB TEST 완료
+
+[33mcommit 8960e131760a5b4630f4e79e8682308358293157[m
+Author: SMJ <m1nxii126@gmail.com>
+Date:   Tue May 20 11:37:33 2025 +0900
+
+    11:35 일기생성베타버전완료☆
+
+[33mcommit 0e8eb24c07c45c6967fc4cc245469364138d5153[m
+Author: 전석현 <drchun2@naver.com>
+Date:   Mon May 19 16:50:13 2025 +0900
+
+    16:50 볼륨 경량화 커밋
+
+[33mcommit 3b80bfed4769ca6e5e1bb9cbd8dd3ae9e0b1f646[m
+Author: YEJ <yooej1210@gmail.com>
+Date:   Mon May 19 16:39:07 2025 +0900
+
+    16:38 자질구레 커밋
+
+[33mcommit c696d4d5825f8b091c8a76a45d87e364598b93b6[m
+Author: 조 제 현 <jojehyun@naver.comgit config --global user.email jojehyun@naver.com>
+Date:   Mon May 19 16:23:46 2025 +0900
+
+    16:23 핀마커 완료
+
+[33mcommit a3a69679e9c8a0aa07efe6db3ac818ce08a38549[m
+Author: 조 제 현 <jojehyun@naver.comgit config --global user.email jojehyun@naver.com>
+Date:   Mon May 19 16:06:31 2025 +0900
+
+    16:05 핀마커 (추출 + 찍기)
+
+[33mcommit 662cb3638e891c17c49082738dc93492086973c6[m
+Author: 전석현 <drchun2@naver.com>
+Date:   Mon May 19 15:50:30 2025 +0900
+
+    15:49 메타데이터 추출 완료
+
+[33mcommit 3c7a45df49a592eb0eeda034d1e20e9312a71f87[m
+Author: 전석현 <drchun2@naver.com>
+Date:   Mon May 19 14:52:22 2025 +0900
+
+    14:51 EXITTOOL 설치
+
+[33mcommit 4a2ac522915ff32ac0098faa8beba458b1e911cc[m
+Author: YEJ <yooej1210@gmail.com>
+Date:   Mon May 19 14:15:34 2025 +0900
+
+    메인수정및로그인회원가입커밋
+
+[33mcommit 2c0f160bf2fe926a08f5c0df5ab52c8ca870db9f[m
+Author: YEJ <yooej1210@gmail.com>
+Date:   Mon May 19 11:07:50 2025 +0900
+
+    헤더,메뉴바,메인콘텐츠커밋2
+
+[33mcommit 7a2e38ce77e67f5d6486b2181b3823b894fe84ff[m
+Author: YEJ <yooej1210@gmail.com>
+Date:   Mon May 19 10:28:29 2025 +0900
+
+    헤더,메뉴바,메인콘텐츠커밋
+
+[33mcommit 98b568ff460f406ff4b8ed2c4b4e241f5cbe019a[m
+Author: YEJ <yooej1210@gmail.com>
+Date:   Mon May 19 09:53:44 2025 +0900
+
+    노드서버 첫커밋
+
+[33mcommit 344d8f2d9d82407d78a214393c388cb10017946a[m
+Author: SMJ <m1nxii126@gmail.com>
+Date:   Mon May 19 09:41:46 2025 +0900
+
+    일기생성파일
+
+[33mcommit b4c05a73a217f1e9219309d74ff729d94f477bf6[m
+Author: YEJ <yooej1210@gmail.com>
+Date:   Mon May 19 09:29:23 2025 +0900
+
+    리액트 첫 커밋
+
+[33mcommit 8373c0af274da276e8a37d180e0cfff6c17d6256[m
+Author: dw <rlaehdnjs714@gmail.com>
+Date:   Fri May 16 16:37:30 2025 +0900
+
+    KDW 16:37 포카칩은 다 맛있어~
+
+[33mcommit 1871681949c8fb6d8a85f90b17e17b4115258723[m
+Author: SMJ <m1nxii126@gmail.com>
+Date:   Fri May 16 16:32:43 2025 +0900
+
+    SMJ 16:32 포카칩은 어니언이 최고
+
+[33mcommit 85d0ec478563665f2e99d9e199c96b31557597d8[m
+Author: YEJ <yooej1210@gmail.com>
+Date:   Fri May 16 16:30:37 2025 +0900
+
+    YEJ 16:30 포카칩은 짭짤한게 최고
+
+[33mcommit 21cbe25f68ff9b8f11fc236e029e1b33775cbe3b[m
+Author: 조 제 현 <jojehyun@naver.comgit config --global user.email jojehyun@naver.com>
+Date:   Fri May 16 16:26:29 2025 +0900
+
+    JJH 16:26 이적은 가수
+
+[33mcommit 931202374f5166e9c897a3406ad8b1bc8da89c70[m
+Author: 전석현 <drchun2@naver.com>
+Date:   Fri May 16 16:07:29 2025 +0900
+
+    야호
