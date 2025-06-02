@@ -117,7 +117,7 @@ function LoginPageInner() {
 
   return (
     <div className="min-h-screen bg-white px-4 flex flex-col items-center justify-center relative">
-      <img src="/logo.png" alt="logo" className="h-8 mb-6" />
+      
 
       <button
         onClick={() => navigate(-1)}

@@ -30,7 +30,7 @@ function GalleryFolder() {
   }, [tag, user_id]);
 
   return (
-    <div className="p-4 max-w-[420px] mx-auto">
+    <div className="p-4 max-w-[420px] mx-auto bg-white min-h-screen">
       <div className="flex items-center mb-4">
         <button
           onClick={() => navigate('/gallery')}

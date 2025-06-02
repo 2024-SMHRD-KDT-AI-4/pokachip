@@ -35,11 +35,11 @@ function MainPage() {
         .then((res) => {
           console.log("✅ 랜덤 일기 응답:", res.data);
           setRandomDiaries(res.data);
-          
+
         })
         .catch((err) => {
           console.error("랜덤 일기 불러오기 실패:", err);
-          
+
         });
     }
   }, [isLoggedIn]);
@@ -59,12 +59,12 @@ function MainPage() {
     {
       title: "비 내리는 날의 추억",
       date: "2025-05-22",
-      file_name: null,
+      file_name: "/rain.jpg",
     },
     {
       title: "봄날 산책",
       date: "2025-05-21",
-      file_name: null,
+      file_name: "/walk.jpg",
     },
   ];
 
@@ -84,8 +84,10 @@ function MainPage() {
     const diaryId = data.diary_idx;
 
     const image = fileName
-      ? `http://localhost:5000/uploads/${fileName}`
-      : "/default-image.jpg";
+      ? fileName.startsWith("/") // ✅ /로 시작하면 public 이미지로 인식
+        ? fileName
+        : `http://localhost:5000/uploads/${fileName}`
+      : "/default-image.jpg"; // 기본 이미지
 
     const handleCardClick = () => {
       if (!isLoggedIn) {
