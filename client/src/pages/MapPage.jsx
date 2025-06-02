@@ -160,18 +160,46 @@ export default function MapPage() {
   }, [photos, navigate]);
 
   return (
-
-<div className="p-4  bg-white">
+    <div className="p-4 bg-white min-h-screen">
       <h2 className="text-lg font-bold mb-4">🗺️ 여행 지도</h2>
+
+      {/* 지도 영역 */}
       <div
         ref={mapRef}
         style={{
           width: "100%",
-          height: "750px",
+          height: "550px",
           borderRadius: "12px",
           marginTop: "1rem",
         }}
       />
+
+      {/* 마커 설명 영역 */}
+      <div className="mt-6 grid grid-cols-4 gap-4 text-center">
+        {/* 맛집 */}
+        <div className="flex flex-col items-center">
+          <img src="/food.png" alt="음식 마커" className="w-12 h-12" />
+          <span className="text-sm mt-1 text-gray-700">음식</span>
+        </div>
+
+        {/* 명소 */}
+        <div className="flex flex-col items-center">
+          <img src="/people.png" alt="인물 마커" className="w-12 h-12" />
+          <span className="text-sm mt-1 text-gray-700">인물</span>
+        </div>
+
+        {/* 숙소 */}
+        <div className="flex flex-col items-center">
+          <img src="/accommodation.png" alt="숙소 마커" className="w-12 h-12" />
+          <span className="text-sm mt-1 text-gray-700">숙소</span>
+        </div>
+
+        {/* 기타 */}
+        <div className="flex flex-col items-center">
+          <img src="/landscape.png" alt="풍경 마커" className="w-12 h-12" />
+          <span className="text-sm mt-1 text-gray-700">풍경</span>
+        </div>
+      </div>
     </div>
   );
 }
