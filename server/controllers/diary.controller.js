@@ -2,10 +2,9 @@ require("dotenv").config();
 const axios = require("axios");
 const pool = require("../db");
 const { extractExifData } = require("../utils/exifUtil");
+const { buildPrompt } = require("../utils/promptBuilder");
+const { callGPT } = require("../services/gptService");
 
-const OPENAI_API_KEY = process.env.GPT_API_KEY;
-
-// ✅ 1) 사진 + 메타데이터 기반 GPT 일기 생성
 const generateDiaryFromImage = async (req, res) => {
   const user_id = req.user?.user_id || req.body.user_id;
   const { companion, feeling, length, tone, weather } = req.body;
@@ -16,9 +15,10 @@ const generateDiaryFromImage = async (req, res) => {
   }
 
   try {
+    // ✅ EXIF + 위치 + GPT 이미지용 base64 추출
     const { dateList, gpsList, locationList, imageMessages } = await extractExifData(imageFiles);
 
-    // 날짜 처리
+    // ✅ 날짜 계산
     let tripDateStr, tripDateDB;
     if (dateList.length > 0) {
       dateList.sort((a, b) => a - b);
@@ -33,64 +33,14 @@ const generateDiaryFromImage = async (req, res) => {
 
     const locationInfo = locationList.length > 0 ? locationList.join(", ") : "";
 
-    const promptText = `
-너는 여행 감성 일기 작가야. 아래 조건과 사진들을 참고해서 여행 일기를 작성해줘. 다음 사항을 반드시 지켜줘:
+    // ✅ GPT 프롬프트 생성 + 호출
+    const promptText = buildPrompt({ companion, feeling, length, tone, weather }, locationInfo, tripDateStr);
+    const diary = await callGPT(promptText, imageMessages);
 
-1. 제목에는 '## 제목:' 같은 형식 없이 자연스럽고 감성적인 제목을 넣어줘.
-2. 제목과 본문을 분명히 구분해서 써줘. 제목을 한 줄로 먼저 작성하고 그 다음에 본문을 써줘.
-3. 본문에도 '본문:' 같은 표현 없이, 자연스럽게 이어서 작성해줘.
-4. 사진에 나온 장면, 분위기, 인물, 배경 등을 분석해서 반드시 본문에 반영해줘.
-5. 사진에 나온 배경이 어디인지 유추할 수 있으면 지역이나 명소 이름을 넣어줘.
-6. 사용자가 입력한 정보도 일기 내용에 자연스럽게 포함해줘.
+    const diaryTitle = diary.title;
+    const diaryContent = diary.content;
 
-말투 스타일은 다음 중 하나야:
-- 감성적인 말투: 부드럽고 비유적인 표현을 써줘. 문장에 감정이 담기도록 해줘.
-- 담백한 말투: 군더더기 없이, 사실 중심으로 정직하게 써줘.
-- 발랄한 말투: 반말을 사용하고, 귀엽고 톡톡 튀는 여자아이 말투로 써줘. 너무 과하지 않게!
-- 유머러스한 말투: 반말을 사용하고, 요즘 밈이나 말장난, 웃긴 표현이 자연스럽게 들어가게 해줘.
-
-- 촬영 위치: ${locationInfo || "정보 없음"}
-- 날짜: ${tripDateStr}
-- 동반자: ${companion}
-- 기분: ${feeling}
-- 날씨: ${weather}
-- 글 길이: ${length}
-- 말투 스타일: ${tone}
-    `.trim();
-
-    const messages = [
-      {
-        role: "system",
-        content: "너는 여행 감성 일기를 쓰는 작가야. 일기 제목과 본문을 작성해줘.",
-      },
-      {
-        role: "user",
-        content: promptText,
-        images: imageMessages,
-      },
-    ];
-
-    const gptRes = await axios.post(
-      "https://api.openai.com/v1/chat/completions",
-      {
-        model: "gpt-4o",
-        messages,
-        max_tokens: 1500,
-        temperature: 0.7,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${OPENAI_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    const fullText = gptRes.data.choices[0].message.content.trim();
-    const [titleLine, ...bodyLines] = fullText.split("\n");
-    const diaryTitle = titleLine.replace(/^##\s*제목:?\s*/, "").trim();
-    const diaryContent = bodyLines.join("\n").trim();
-
+    // ✅ DB 저장 시작
     const conn = await pool.getConnection();
     await conn.beginTransaction();
 
@@ -124,6 +74,7 @@ const generateDiaryFromImage = async (req, res) => {
     await conn.commit();
     conn.release();
 
+    // ✅ Flask 태그 분류 요청
     try {
       await axios.post("http://localhost:6006/classify");
       console.log("✔️ Flask 서버로 분류 요청 전송 완료");
@@ -142,7 +93,7 @@ const generateDiaryFromImage = async (req, res) => {
   }
 };
 
-// 기존 기능 유지
+// ✅ 일기 ID로 조회
 const getDiaryById = async (req, res) => {
   const diaryId = req.params.id;
   try {
@@ -170,6 +121,7 @@ const getDiaryById = async (req, res) => {
   }
 };
 
+// ✅ 사진으로 일기 조회
 const getDiaryByPhotoIdx = async (req, res) => {
   const user_id = req.user.user_id;
   const photoIdx = req.params.photoIdx;
@@ -191,13 +143,14 @@ const getDiaryByPhotoIdx = async (req, res) => {
   }
 };
 
+// ✅ 사용자 전체 일기 목록 조회
 const getAllDiariesByUser = async (req, res) => {
   const user_id = req.user.user_id;
   try {
     const [rows] = await pool.query(
       `SELECT d.diary_idx,
               d.diary_title,
-              d.diary_content, -- ✅ 본문 내용 추가
+              d.diary_content,
               d.trip_date,
               (
                 SELECT p.file_name
@@ -225,10 +178,9 @@ const getAllDiariesByUser = async (req, res) => {
   }
 };
 
+// ✅ 랜덤 일기 3개
 const getRandomDiariesByUser = async (req, res) => {
-
   const user_id = req.user?.user_id;
-
   if (!user_id) {
     console.warn("❌ user_id가 없음. 인증 실패 처리.");
     return res.status(401).json({ message: "사용자 인증 실패" });
@@ -236,42 +188,30 @@ const getRandomDiariesByUser = async (req, res) => {
 
   try {
     const [rows] = await pool.query(
-      `SELECT d.diary_idx,
-          d.diary_title,
-          d.diary_content,
-          d.trip_date,
-          (
-            SELECT p.file_name
-            FROM ai_diary_photos dp
-            LEFT JOIN photo_info p ON dp.photo_idx = p.photo_idx
-            WHERE dp.diary_idx = d.diary_idx
-            ORDER BY dp.created_at ASC
-            LIMIT 1
-          ) AS file_name
-   FROM ai_diary_info d
-   WHERE d.user_id = ?
-   ORDER BY RAND()
-   LIMIT 3`,
+      `SELECT d.diary_idx, d.diary_title, d.diary_content, d.trip_date,
+              (
+                SELECT p.file_name
+                FROM ai_diary_photos dp
+                LEFT JOIN photo_info p ON dp.photo_idx = p.photo_idx
+                WHERE dp.diary_idx = d.diary_idx
+                ORDER BY dp.created_at ASC
+                LIMIT 1
+              ) AS file_name
+       FROM ai_diary_info d
+      WHERE d.user_id = ?
+      ORDER BY RAND()
+      LIMIT 3`,
       [user_id]
     );
 
-
-
-
-
-    if (rows.length === 0) {
-      console.warn("⚠️ 랜덤 일기 결과 없음. 빈 배열 반환");
-      return res.status(200).json([]); // ❗ 404 말고 그냥 빈 배열
-    }
-
     return res.json(rows);
   } catch (err) {
-    console.error("❌ 쿼리 실패:", err);
+    console.error("❌ 랜덤 일기 조회 실패:", err);
     return res.status(500).json({ message: "랜덤 일기 조회 실패" });
   }
 };
 
-// ✅ 5. 일기 삭제
+// ✅ 일기 삭제
 const deleteDiary = async (req, res) => {
   const diaryId = req.params.id;
   const user_id = req.user?.user_id || req.body.user_id;
@@ -280,7 +220,6 @@ const deleteDiary = async (req, res) => {
   try {
     await conn.beginTransaction();
 
-    // 1. 관련된 photo_idx 가져오기
     const [photoRows] = await conn.query(
       `SELECT p.photo_idx
        FROM ai_diary_photos ap
@@ -290,13 +229,8 @@ const deleteDiary = async (req, res) => {
     );
     const photoIdxList = photoRows.map(row => row.photo_idx);
 
-    // 2. ai_diary_photos에서 삭제
-    await conn.query(
-      `DELETE FROM ai_diary_photos WHERE diary_idx = ?`,
-      [diaryId]
-    );
+    await conn.query(`DELETE FROM ai_diary_photos WHERE diary_idx = ?`, [diaryId]);
 
-    // 3. photo_info에서 삭제
     if (photoIdxList.length > 0) {
       await conn.query(
         `DELETE FROM photo_info WHERE photo_idx IN (?) AND user_id = ?`,
@@ -304,7 +238,6 @@ const deleteDiary = async (req, res) => {
       );
     }
 
-    // 4. ai_diary_info에서 삭제
     await conn.query(
       `DELETE FROM ai_diary_info WHERE diary_idx = ? AND user_id = ?`,
       [diaryId, user_id]
@@ -320,8 +253,6 @@ const deleteDiary = async (req, res) => {
     conn.release();
   }
 };
-
-
 
 module.exports = {
   generateDiaryFromImage,
