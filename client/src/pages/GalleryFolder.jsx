@@ -2,6 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import PhotoModal from '../components/PhotoModal'; // ✅ 모달 컴포넌트
+import { FaArrowLeftLong } from "react-icons/fa6";
 
 const tagLabels = {
   people: '인물',
@@ -31,15 +32,18 @@ function GalleryFolder() {
 
   return (
     <div className="p-4 max-w-[420px] mx-auto bg-white min-h-screen">
-      <div className="flex items-center mb-4">
+      <div className="relative mb-4">
         <button
           onClick={() => navigate('/gallery')}
-          className="text-blue-500 font-semibold mr-2"
+          className="absolute top-1 left-1 text-blue-400 text-2xl"
+          aria-label="뒤로가기"
         >
-          ← 뒤로가기
+          <FaArrowLeftLong />
         </button>
-        <h2 className="text-xl font-bold">{tagLabels[tag]}</h2>
+
+        <h2 className="text-xl font-bold ml-12">{tagLabels[tag]}</h2>
       </div>
+
 
       <div className="grid grid-cols-3 gap-2">
         {photos.map((photo, idx) => (

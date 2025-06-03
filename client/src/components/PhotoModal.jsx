@@ -7,6 +7,7 @@ import {
 } from 'react-icons/hi';
 import FolderSelectModal from './FolderSelectModal';
 import { useNavigate, useParams } from 'react-router-dom';
+import { FaArrowLeftLong } from "react-icons/fa6";
 
 const tagLabels = {
   people: '인물',
@@ -71,7 +72,7 @@ function PhotoModal({ photo, onClose }) {
               onClose();
             }}
           >
-            <HiOutlineArrowLeft size={24} />
+            <FaArrowLeftLong size={24} />
           </button>
 
           <div className="relative">

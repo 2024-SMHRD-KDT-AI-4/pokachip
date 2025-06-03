@@ -5,7 +5,7 @@ function DiaryList({ diaries }) {
     const navigate = useNavigate();
 
     return (
-<div className="px-4 py-4 space-y-8 max-h-full">
+        <div className="px-4 py-4 space-y-8 max-h-full">
             {diaries.map((diary, idx) => {
                 const isEven = idx % 2 === 1;
                 const diaryId = diary.diary_idx;
@@ -46,17 +46,18 @@ function DiaryList({ diaries }) {
                             <p className="text-base font-semibold text-gray-800 mb-1">
                                 “{diary.title}”
                             </p>
-                            <p className="text-sm text-gray-600 whitespace-pre-line">
+                            <p className="text-sm text-gray-600 whitespace-pre-line line-clamp-2">
                                 {diary.content}
                             </p>
+                            {/* ✅ 항상 보이는 더보기 */}
+                            <span className="text-blue-400 text-sm mt-1 inline-block font-medium">
+                                더보기
+                            </span>
                         </div>
                     </div>
                 );
             })}
         </div>
-
-
-
     );
 }
 

@@ -121,7 +121,7 @@ function LoginPageInner() {
 
       <button
         onClick={() => navigate(-1)}
-        className="absolute top-4 left-4 text-gray-600 text-2xl"
+        className="absolute top-4 left-4 text-blue-400 text-2xl"
         aria-label="뒤로가기"
       >
         <FaArrowLeftLong />
@@ -149,10 +149,10 @@ function LoginPageInner() {
         </button>
 
         <div className="text-center mt-4">
-          <p className="text-sm text-gray-600">회원이 아니신가요?</p>
+          <p className="text-sm text-gray-500">회원이 아니신가요?</p>
           <button
             onClick={() => navigate("/register")}
-            className="text-sm text-blue-600 font-semibold hover:underline mt-1"
+            className="text-sm text-blue-400 font-semibold hover:underline mt-1"
           >
             회원가입 하러가기
           </button>

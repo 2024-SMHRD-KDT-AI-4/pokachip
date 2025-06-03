@@ -108,7 +108,7 @@ function RegisterPageInner() {
 
       <button
         onClick={() => navigate(-1)}
-        className="absolute top-4 left-4 text-gray-600 text-2xl"
+        className="absolute top-4 left-4 text-blue-400 text-2xl"
         aria-label="뒤로가기"
       >
         <FaArrowLeftLong />

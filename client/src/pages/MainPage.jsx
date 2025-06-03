@@ -142,10 +142,10 @@ function MainPage() {
           centeredSlides={true}
           loop={true}
           autoplay={{
-            delay: 1000,
+            delay: 3000,
             disableOnInteraction: false,
           }}
-          
+
           className="w-full pb-12"
           observer={true}
           observeParents={true}
@@ -162,7 +162,7 @@ function MainPage() {
             <p className="text-sm">일기를 보려면 로그인이 필요해요!</p>
             <button
               onClick={() => navigate("/login")}
-              className="bg-blue-500 text-white text-sm px-4 py-2 rounded-full hover:bg-blue-600"
+              className="bg-blue-400 text-white text-sm px-4 py-2 rounded-full hover:bg-blue-500"
             >
               로그인하러 가기
             </button>
@@ -180,16 +180,13 @@ function MainPage() {
 
         {isLoggedIn && (
           <div className="px-4">
-            <div
-              onClick={() => navigate("/diarycreate")}
-              className="bg-blue-50 rounded-xl p-5 flex justify-between items-center shadow-md cursor-pointer mt-6 mb-6"
-            >
-              <p className="text-gray-800 font-semibold">
-                새로운 여행을 기록해볼까요?
-              </p>
-              <div className="bg-blue-500 text-white text-xl rounded-full w-9 h-9 flex items-center justify-center hover:bg-blue-600">
-                +
-              </div>
+            <div className="flex justify-center mt-6 mb-16">
+              <button
+                onClick={() => navigate("/diarycreate")}
+                className="bg-blue-100 hover:bg-blue-200 text-gray-700 font-semibold px-6 py-3 rounded-full shadow-md cursor-pointer transition animate-bounce"
+              >
+                새로운 여행 기록하기
+              </button>
             </div>
           </div>
         )}
@@ -205,7 +202,7 @@ function MainPage() {
                   month: date.toLocaleString("en-US", { month: "short" }).toUpperCase(),
                   year: date.getFullYear(),
                   title: d.diary_title,
-                  content: d.diary_content?.slice(0, 80) || '',
+                  content: d.diary_content?.slice(0, 65) || '',
                   image: d.file_name
                     ? `http://localhost:5000/uploads/${d.file_name}`
                     : "/default.jpg",
@@ -233,7 +230,7 @@ function MainPage() {
                     setShowLoginModal(false);
                     navigate("/login");
                   }}
-                  className="px-4 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                  className="px-4 py-1 bg-blue-400 text-white rounded hover:bg-blue-500"
                 >
                   로그인
                 </button>

@@ -75,7 +75,7 @@ function FooterNav() {
                 취소
               </button>
               <button
-                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+                className="bg-blue-400 hover:bg-blue-500 text-white px-4 py-2 rounded"
                 onClick={() => {
                   setShowModal(false);
                   navigate("/login");

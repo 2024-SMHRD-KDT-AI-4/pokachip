@@ -110,7 +110,9 @@ export default function MapPage() {
           map,
           icon: {
             url: iconUrl,
-            scaledSize: new google.maps.Size(32, 32),
+            scaledSize: new google.maps.Size(45, 45), // 항상 고정 크기 (픽셀 단위)
+            anchor: new google.maps.Point(20, 40),    // 기준점 조정 (이미지 중앙 하단 등)
+
           },
         });
         markersRef.current.push(marker);
