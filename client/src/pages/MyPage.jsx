@@ -10,14 +10,14 @@ function MyPage() {
         if (!token) return;
 
         // 사용자 정보 가져오기
-        axios.get('/api/user/me', {
+        axios.get('http://localhost:5000/api/user/me', {
             headers: { Authorization: `Bearer ${token}` }
         })
             .then(res => {
                 setUser(res.data);
 
                 // 통계 정보도 이어서 요청
-                return axios.get('/api/user/stats', {
+                return axios.get('http://localhost:5000/api/user/stats', {
                     headers: { Authorization: `Bearer ${token}` }
                 });
             })
@@ -46,7 +46,7 @@ function MyPage() {
 
         const token = localStorage.getItem('token');
         try {
-            await axios.delete(`/api/user`, {
+            await axios.delete(`http://localhost:5000/api/user`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
