@@ -45,59 +45,53 @@ function LoginPageInner() {
   const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
 
   const googleLogin = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      try {
-        if (isMobile) {
-          const res = await axios.post(
-            `${import.meta.env.VITE_API_URL}/api/google-token`,
-            {
-              code: tokenResponse.code,
-              redirect_uri:
-                window.location.hostname === "localhost"
-                  ? "http://localhost:5173/login"
-                  : "https://tripd.netlify.app/login",
-            }
-          );
+  onSuccess: async (tokenResponse) => {
+    try {
+      if (isMobile) {
+        const res = await axios.post(
+          `${import.meta.env.VITE_API_URL}/api/google-token`,
+          {
+            code: tokenResponse.code,
+            // ✅ redirect_uri는 프론트에서 넘기지 않음
+          }
+        );
 
-          const { user_id, user_name, access_token } = res.data;
+        const { user_id, user_name, access_token } = res.data;
 
-          const userInfo = {
-            user_id,
-            user_name,
-            social_type: "google",
-            access_token,
-          };
+        const userInfo = {
+          user_id,
+          user_name,
+          social_type: "google",
+          access_token,
+        };
 
-          await loginToBackend(userInfo, login, navigate, setError);
-        } else {
-          const accessToken = tokenResponse.access_token;
-          const res = await axios.get(
-            "https://www.googleapis.com/oauth2/v3/userinfo",
-            {
-              headers: { Authorization: `Bearer ${accessToken}` },
-            }
-          );
+        await loginToBackend(userInfo, login, navigate, setError);
+      } else {
+        const accessToken = tokenResponse.access_token;
+        const res = await axios.get(
+          "https://www.googleapis.com/oauth2/v3/userinfo",
+          {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          }
+        );
 
-          const userInfo = {
-            user_id: res.data.email,
-            user_name: res.data.name,
-            social_type: "google",
-            access_token: accessToken,
-          };
+        const userInfo = {
+          user_id: res.data.email,
+          user_name: res.data.name,
+          social_type: "google",
+          access_token: accessToken,
+        };
 
-          await loginToBackend(userInfo, login, navigate, setError);
-        }
-      } catch (err) {
-        console.error("구글 사용자 정보 오류", err);
-        setError("구글 로그인 실패");
+        await loginToBackend(userInfo, login, navigate, setError);
       }
-    },
-    onError: () => setError("구글 로그인 실패"),
-    flow: isMobile ? "auth-code" : "implicit",
-    ...(isMobile && {
-        redirect_uri: window.location.origin + "/login",
-    }),
-  });
+    } catch (err) {
+      console.error("구글 사용자 정보 오류", err);
+      setError("구글 로그인 실패");
+    }
+  },
+  onError: () => setError("구글 로그인 실패"),
+  flow: isMobile ? "auth-code" : "implicit",
+});
 
   const kakaoLogin = () => {
     if (!window.Kakao) return setError("카카오 SDK 로드 실패");
