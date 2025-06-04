@@ -5,34 +5,28 @@ function MyPage() {
     const [user, setUser] = useState(null);
     const [stats, setStats] = useState({ diaryCount: 0, photoCount: 0 });
 
-    // 회원 정보 불러오기
-    // ✅ 이 useEffect는 마이페이지 열릴 때 자동으로 실행되는 영역
     useEffect(() => {
-        // ✅ localStorage에서 로그인한 사용자 정보 꺼내기
-        const userData = JSON.parse(localStorage.getItem('user'));
-        const userId = userData?.user_id;
+        const token = localStorage.getItem('token');
+        if (!token) return;
 
-        if (!userId) return;
-
-        // ✅ 사용자 정보 요청
+        // 사용자 정보 가져오기
         axios.get('/api/user/me', {
-            headers: { 'x-user-id': userId }
+            headers: { Authorization: `Bearer ${token}` }
         })
             .then(res => {
-                setUser(res.data); // 사용자 정보 저장
+                setUser(res.data);
 
-                // ✅ 통계 정보 요청도 이어서!
+                // 통계 정보도 이어서 요청
                 return axios.get('/api/user/stats', {
-                    headers: { 'x-user-id': userId }
+                    headers: { Authorization: `Bearer ${token}` }
                 });
             })
-            .then(res => setStats(res.data)) // 통계 저장
+            .then(res => setStats(res.data))
             .catch(err => {
                 console.error('🔥 사용자 정보 또는 통계 실패:', err);
-                // 오류가 나더라도 일단 임시 값 넣어서 화면이 안 죽도록 처리
                 setUser({
                     user_name: '게스트',
-                    social_type: 'Google',
+                    social_type: 'Unknown',
                     joined_at: new Date().toISOString(),
                     user_id: 'dummy'
                 });
@@ -40,6 +34,31 @@ function MyPage() {
             });
     }, []);
 
+    const handleLogout = () => {
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+        alert("로그아웃 되었습니다.");
+        window.location.href = '/';
+    };
+
+    const handleDelete = async () => {
+        if (!window.confirm("정말 탈퇴하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) return;
+
+        const token = localStorage.getItem('token');
+        try {
+            await axios.delete(`/api/user`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
+            alert("회원 탈퇴가 완료되었습니다.");
+            window.location.href = '/';
+        } catch (err) {
+            alert("탈퇴 중 오류가 발생했습니다.");
+            console.error(err);
+        }
+    };
 
     if (!user) return <p className="text-center mt-10">회원 정보를 불러오는 중입니다...</p>;
 
@@ -74,14 +93,10 @@ function MyPage() {
                 </div>
             </div>
 
-            {/* 로그아웃 버튼 */}
+            {/* 로그아웃 */}
             <div className="text-center mt-8">
                 <button
-                    onClick={() => {
-                        localStorage.removeItem('user');
-                        alert("로그아웃 되었습니다.");
-                        window.location.href = '/';
-                    }}
+                    onClick={handleLogout}
                     className="text-sm px-4 py-2 border border-gray-300 rounded-xl text-gray-500 hover:text-blue-500 hover:border-blue-300 transition mb-4"
                 >
                     로그아웃
@@ -91,29 +106,11 @@ function MyPage() {
             {/* 회원 탈퇴 */}
             <div className="text-center mt-8">
                 <button
-                    onClick={async () => {
-                        if (window.confirm("정말 탈퇴하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) {
-                            try {
-                                await axios.delete(`/api/user/${user.user_id}`);
-
-                                // ✅ 로그인 상태 초기화 (자동 로그아웃)
-                                localStorage.removeItem('user');
-
-                                alert("회원 탈퇴가 완료되었습니다.");
-
-                                // ✅ 홈으로 이동
-                                window.location.href = '/';
-                            } catch (err) {
-                                alert("탈퇴 중 오류가 발생했습니다.");
-                                console.error(err);
-                            }
-                        }
-                    }}
+                    onClick={handleDelete}
                     className="text-sm px-4 py-2 border border-gray-300 rounded-xl text-gray-500 hover:text-red-500 hover:border-red-300 transition"
                 >
                     회원 탈퇴하기
                 </button>
-
             </div>
         </div>
     );

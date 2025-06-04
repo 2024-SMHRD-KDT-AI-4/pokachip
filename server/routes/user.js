@@ -1,12 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../db'); // DB 연결 불러오기
+const pool = require('../db');
+const authenticateToken = require('../middleware/authenticateToken'); // ✅ 추가
 
 // ✅ 로그인된 사용자 정보 조회
-router.get('/me', async (req, res) => {
-  const userId = req.headers['x-user-id'];
-  if (!userId) return res.status(401).json({ message: '로그인이 필요합니다.' });
-
+router.get('/me', authenticateToken, async (req, res) => {
+  const userId = req.user.user_id; // ✅ JWT에서 추출
   try {
     const [rows] = await pool.query('SELECT * FROM user_info WHERE user_id = ?', [userId]);
     if (rows.length === 0) return res.status(404).json({ message: '사용자 없음' });
@@ -17,11 +16,9 @@ router.get('/me', async (req, res) => {
   }
 });
 
-// ✅ 통계 정보 (작성한 일기 수, 사진 수)
-router.get('/stats', async (req, res) => {
-  const userId = req.headers['x-user-id'];
-  if (!userId) return res.status(401).json({ message: '로그인이 필요합니다.' });
-
+// ✅ 통계 정보
+router.get('/stats', authenticateToken, async (req, res) => {
+  const userId = req.user.user_id;
   try {
     const [diaryRows] = await pool.query(
       'SELECT COUNT(*) AS count FROM ai_diary_info WHERE user_id = ?', [userId]
@@ -40,9 +37,9 @@ router.get('/stats', async (req, res) => {
   }
 });
 
-// ✅ 회원 탈퇴 (관련 테이블 데이터 전부 삭제)
-router.delete('/:userId', async (req, res) => {
-  const userId = req.params.userId;
+// ✅ 회원 탈퇴
+router.delete('/', authenticateToken, async (req, res) => {
+  const userId = req.user.user_id;
   const conn = await pool.getConnection();
 
   try {
