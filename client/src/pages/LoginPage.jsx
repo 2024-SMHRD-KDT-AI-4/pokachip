@@ -21,21 +21,16 @@ const loginToBackend = async (userInfo, login, navigate, setError) => {
       }
     );
 
-    console.log("백엔드 응답:", res.data);
-
     if (res.data.token) {
       login(res.data.token, res.data.user);
       navigate("/");
     }
   } catch (err) {
     console.error("로그인 실패:", err);
-
-    // ✅ 백엔드에서 전달한 에러 메시지 추출
     const msg = err.response?.data?.error || "로그인에 실패했습니다.";
-    setError(msg); // 프론트 모달에 정확히 전달
+    setError(msg);
   }
 };
-
 
 function LoginPageInner() {
   const navigate = useNavigate();
@@ -46,7 +41,6 @@ function LoginPageInner() {
     initKakao();
   }, []);
 
-  // ✅ 에러 확인 버튼 클릭 시 동작 분기
   const handleErrorConfirm = () => {
     if (error.includes("회원이 아닙니다")) {
       navigate("/register");
@@ -54,6 +48,8 @@ function LoginPageInner() {
       setError("");
     }
   };
+
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
   const googleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
@@ -80,45 +76,51 @@ function LoginPageInner() {
       }
     },
     onError: () => setError("구글 로그인 실패"),
-    flow: "implicit",
+    flow: isMobile ? "implicit" : "popup",
+    redirect_uri: isMobile ? "https://tripd.netlify.app" : undefined,
   });
 
   const kakaoLogin = () => {
     if (!window.Kakao) return setError("카카오 SDK 로드 실패");
 
-    const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
+    if (isMobile) {
+      // ✅ 모바일에서는 redirect 방식 사용
+      const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?response_type=code&client_id=${
+        import.meta.env.VITE_KAKAO_CLIENT_ID
+      }&redirect_uri=${encodeURIComponent("https://tripd.netlify.app/kakao-callback")}`;
 
-    window.Kakao.Auth.login({
-      scope: "profile_nickname, account_email",
-      throughTalk: isMobile,
-      success: async () => {
-        try {
-          const res = await window.Kakao.API.request({ url: "/v2/user/me" });
+      window.location.href = kakaoAuthUrl;
+    } else {
+      // ✅ 웹에서는 popup 방식 사용
+      window.Kakao.Auth.login({
+        scope: "profile_nickname, account_email",
+        success: async () => {
+          try {
+            const res = await window.Kakao.API.request({ url: "/v2/user/me" });
 
-          const userInfo = {
-            user_id: res.kakao_account?.email,
-            user_name: res.properties?.nickname,
-            social_type: "kakao",
-            access_token: window.Kakao.Auth.getAccessToken(),
-          };
+            const userInfo = {
+              user_id: res.kakao_account?.email,
+              user_name: res.properties?.nickname,
+              social_type: "kakao",
+              access_token: window.Kakao.Auth.getAccessToken(),
+            };
 
-          await loginToBackend(userInfo, login, navigate, setError);
-        } catch (err) {
-          console.error("카카오 사용자 정보 오류", err);
+            await loginToBackend(userInfo, login, navigate, setError);
+          } catch (err) {
+            console.error("카카오 사용자 정보 오류", err);
+            setError("카카오 로그인 실패");
+          }
+        },
+        fail: (err) => {
+          console.error("카카오 로그인 실패", err);
           setError("카카오 로그인 실패");
-        }
-      },
-      fail: (err) => {
-        console.error("카카오 로그인 실패", err);
-        setError("카카오 로그인 실패");
-      },
-    });
+        },
+      });
+    }
   };
 
   return (
     <div className="min-h-screen bg-white px-4 flex flex-col items-center justify-center relative">
-      
-
       <button
         onClick={() => navigate(-1)}
         className="absolute top-4 left-4 text-blue-400 text-2xl"
@@ -159,7 +161,6 @@ function LoginPageInner() {
         </div>
       </div>
 
-      {/* ✅ 에러 모달 */}
       {error && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-lg p-6 w-80 text-center">

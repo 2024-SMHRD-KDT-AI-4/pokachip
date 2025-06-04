@@ -4,7 +4,6 @@ import { GoogleOAuthProvider, useGoogleLogin } from '@react-oauth/google';
 import axios from 'axios';
 import { FaArrowLeftLong } from "react-icons/fa6";
 
-
 const initKakao = () => {
   if (window.Kakao && !window.Kakao.isInitialized()) {
     window.Kakao.init(import.meta.env.VITE_KAKAO_CLIENT_ID);
@@ -18,7 +17,7 @@ const registerToBackend = async (userInfo, navigate, setError) => {
     });
 
     if (res.data.message === '회원가입 되었습니다') {
-      setError("회원가입 되었습니다")
+      setError("회원가입 되었습니다");
     }
   } catch (err) {
     console.error(err);
@@ -30,8 +29,6 @@ const registerToBackend = async (userInfo, navigate, setError) => {
   }
 };
 
-
-
 function RegisterPageInner() {
   const navigate = useNavigate();
   const [error, setError] = useState('');
@@ -41,12 +38,14 @@ function RegisterPageInner() {
   }, []);
 
   const handleErrorConfirm = () => {
-    if (error.includes("이미 가입된 이메일")) {
+    if (error.includes("이미 가입된 이메일") || error.includes("회원가입 되었습니다")) {
       navigate("/login");
-    } else if(error.includes("회원가입 되었습니다")) {
-      navigate("/login");
+    } else {
+      setError("");
     }
   };
+
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
   const googleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
@@ -70,42 +69,51 @@ function RegisterPageInner() {
       }
     },
     onError: () => setError('구글 회원가입 실패'),
-    flow: 'implicit',
+    flow: isMobile ? 'implicit' : 'popup',
+    redirect_uri: isMobile ? "https://tripd.netlify.app" : undefined,
   });
 
   const kakaoLogin = () => {
     if (!window.Kakao) return setError('카카오 SDK 로드 실패');
 
-    window.Kakao.Auth.login({
-      scope: 'profile_nickname, account_email',
-      success: async () => {
-        try {
-          const res = await window.Kakao.API.request({ url: '/v2/user/me' });
+    if (isMobile) {
+      // ✅ 모바일 리디렉션 방식
+      const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?response_type=code&client_id=${
+        import.meta.env.VITE_KAKAO_CLIENT_ID
+      }&redirect_uri=${encodeURIComponent("https://tripd.netlify.app/kakao-callback")}`;
 
-          const userInfo = {
-            user_id: res.kakao_account?.email,
-            user_name: res.properties?.nickname,
-            social_type: 'kakao',
-            access_token: window.Kakao.Auth.getAccessToken(),
-          };
+      window.location.href = kakaoAuthUrl;
+    } else {
+      // ✅ 웹 팝업 방식
+      window.Kakao.Auth.login({
+        scope: 'profile_nickname, account_email',
+        success: async () => {
+          try {
+            const res = await window.Kakao.API.request({ url: '/v2/user/me' });
 
-          await registerToBackend(userInfo, navigate, setError);
-        } catch (err) {
-          console.error('카카오 회원가입 실패:', err);
+            const userInfo = {
+              user_id: res.kakao_account?.email,
+              user_name: res.properties?.nickname,
+              social_type: 'kakao',
+              access_token: window.Kakao.Auth.getAccessToken(),
+            };
+
+            await registerToBackend(userInfo, navigate, setError);
+          } catch (err) {
+            console.error('카카오 회원가입 실패:', err);
+            setError('카카오 회원가입 실패');
+          }
+        },
+        fail: (err) => {
+          console.error('카카오 로그인 실패', err);
           setError('카카오 회원가입 실패');
-        }
-      },
-      fail: (err) => {
-        console.error('카카오 로그인 실패', err);
-        setError('카카오 회원가입 실패');
-      },
-    });
+        },
+      });
+    }
   };
 
   return (
     <div className="min-h-screen bg-white px-4 flex flex-col items-center justify-center relative">
-     
-
       <button
         onClick={() => navigate(-1)}
         className="absolute top-4 left-4 text-blue-400 text-2xl"
@@ -133,8 +141,6 @@ function RegisterPageInner() {
           <span className="text-sm text-gray-800 font-medium">카카오로 가입하기</span>
         </button>
 
-
-
         <div className="text-center mt-4">
           <p className="text-sm text-gray-600">이미 계정이 있으신가요?</p>
           <button
@@ -144,7 +150,6 @@ function RegisterPageInner() {
             로그인 하러가기
           </button>
         </div>
-
       </div>
 
       {error && (
@@ -160,7 +165,6 @@ function RegisterPageInner() {
           </div>
         </div>
       )}
-
     </div>
   );
 }
