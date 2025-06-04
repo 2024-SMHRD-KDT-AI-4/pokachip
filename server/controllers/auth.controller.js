@@ -94,8 +94,17 @@ export const loginSocial = async (req, res) => {
         user_name: user.name,
       },
     });
-  } catch (err) {
-    console.error('loginSocial 에러:', err.response?.data || err);
+  }  catch (err) {
+    // 1) err.response가 있으면 상세 데이터를 미리 찍고,
+    // 2) err 자체도 콘솔에 남겨서 스택트레이스 전체를 확인할 수 있게 합니다.
+    console.error('\n🔴 loginSocial 중 예외 발생! 🔴');
+    if (err.response) {
+      console.error('▶ err.response.status:', err.response.status);
+      console.error('▶ err.response.data:', err.response.data);
+    }
+    console.error('▶ err (stack):', err.stack || err);
+    console.error('──────────────────────────────────────────\n');
+
     return res.status(500).json({ error: '로그인 과정에서 오류가 발생했습니다.' });
   }
 };
