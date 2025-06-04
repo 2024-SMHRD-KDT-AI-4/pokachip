@@ -14,32 +14,31 @@ const initKakao = () => {
 };
 
 /**
- * 로그인 요청을 보내는 함수.
- * auth.controller.js 의 loginSocial 엔드포인트 (/api/login) 을 호출합니다.
- * userInfo: { user_id, user_name, social_type, access_token }
+ * 구글에서 받은 authorization code를 백엔드로 전달하여
+ * Google 서버에서 access_token 교환 → userinfo 조회 → 로그인 처리 요청
+ * (auth.controller.js의 loginSocial에 해당)
  */
-const loginSocial = async (userInfo, login, navigate, setError) => {
+const loginSocialViaCode = async (code, login, navigate, setError) => {
   try {
+    // 백엔드 /api/login 엔드포인트에 { code, social_type: "google" } 로 POST
     const res = await axios.post(
       `${import.meta.env.VITE_API_URL}/api/login`,
-      userInfo,
+      { code, social_type: 'google' },
       { headers: { 'Content-Type': 'application/json' } }
     );
-    // 응답에 token, user 객체가 담겨 옵니다.
     if (res.data.token) {
       login(res.data.token, res.data.user);
       navigate('/');
     }
   } catch (err) {
-    console.error('로그인 오류:', err.response?.data || err);
-    const msg = err.response?.data?.error || '로그인에 실패했습니다.';
+    console.error('구글 로그인(api/login) 실패:', err.response?.data || err);
+    const msg = err.response?.data?.error || '구글 로그인 실패';
     setError(msg);
   }
 };
 
 function LoginPageInner() {
   const navigate = useNavigate();
-  // useAuth 훅에서 제공하는 login 함수 (JWT를 저장하고 context에 사용자 정보 세팅)
   const { login } = useAuth();
   const [error, setError] = useState('');
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -48,93 +47,83 @@ function LoginPageInner() {
   useEffect(() => {
     initKakao();
 
-    // --------------------------------------------------------------------------------
-    // 1) 모바일 “implicit redirect” 방식에서 되돌아온 URL 해시( #access_token=... )를 파싱
-    //    - URL 예시: https://tripd.netlify.app/login#access_token=abcdefg123…&token_type=Bearer&…
-    //    - hash 안에 ‘access_token’이 있으면 거기에서 추출하여 구글 사용자 정보 조회 → 로그인
-    // --------------------------------------------------------------------------------
-    const hash = window.location.hash; // "#access_token=abc…&…"
-    if (isMobile && hash.includes('access_token')) {
-      const params = new URLSearchParams(hash.substring(1)); // “#” 제거
-      const accessToken = params.get('access_token');
-      console.log('⭐️ (Login) 모바일 해시에서 파싱된 accessToken:', accessToken);
+    // ───────────────────────────────────────────────────────────────────────────
+    // 1) 모바일 “Auth-Code” 방식에서 되돌아온 URL을 처리
+    //
+    //    예시 URL: https://tripd.netlify.app/login?code=4/ABCDEFGHIJK&scope=...
+    //    리디렉션 후, URLSearchParams로 “code”를 가져와서
+    //    loginSocialViaCode(code, ...) 함수를 호출합니다.
+    // ───────────────────────────────────────────────────────────────────────────
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
 
-      if (accessToken) {
-        // Google 사용자 정보 조회
-        axios
-          .get('https://www.googleapis.com/oauth2/v3/userinfo', {
-            headers: { Authorization: `Bearer ${accessToken}` },
-          })
-          .then((res) => {
-            console.log('⭐️ (Login) 구글 redirect 후 사용자 정보:', res.data);
-            const userInfo = {
-              user_id: res.data.email,
-              user_name: res.data.name,
-              social_type: 'google',
-              access_token: accessToken,
-            };
-            loginSocial(userInfo, login, navigate, setError);
-          })
-          .catch((err) => {
-            console.error('❌ (Login) 구글 사용자 정보 조회 오류:', err.response || err);
-            setError('구글 로그인 실패');
-          });
-      }
+    if (isMobile && code) {
+      console.log('⭐️ LoginPage: 모바일에서 받아온 code:', code);
+      loginSocialViaCode(code, login, navigate, setError);
     }
-
-    // --------------------------------------------------------------------------------
-    // 2) 모바일 카카오 “code” 방식에서 되돌아온 경우: (만일 카카오도 authorization code를 쓰도록 설정했다면)
-    //    URL: https://tripd.netlify.app/login?code=KAUTH_CODE…
-    //    이 예제에서는 “redirect” 대신에도 implicit 방식(토큰)으로 사용하므로 별도 코드 처리하지 않습니다.
-    // --------------------------------------------------------------------------------
   }, [isMobile, login, navigate, location.key]);
 
-  // ------------------------------------------------------------------------
-  // 3) useGoogleLogin 훅을 사용해서, PC(팝업) / 모바일(implicit redirect) 자동 분기
-  //    - flow: 'implicit' (팝업 → tokenResponse.access_token 직접 반환)
-  //    - scope: 'openid profile email' 을 반드시 넣어야 userinfo 권한이 담긴 토큰이 옴
-  //    - redirect_uri: 모바일 시 “https://tripd.netlify.app/login” 으로 콜백 (반드시 Google Console에도 등록)
-  // ------------------------------------------------------------------------
+  // ───────────────────────────────────────────────────────────────────────────
+  // 2) useGoogleLogin 훅을 “auth-code” 흐름으로 사용
+  //
+  //    - flow: 'auth-code'
+  //    - scope: 'openid profile email'
+  //    - redirect_uri: 정확히 “https://tripd.netlify.app/login” (Google Console에도 등록)
+  //    - PC(팝업) → onSuccess(tokenResponse)에서 tokenResponse.code를 백엔드로 전송
+  //    - 모바일 → Google이 자동으로 “https://tripd.netlify.app/login?code=…” 로 리다이렉트
+  // ───────────────────────────────────────────────────────────────────────────
   const googleLogin = useGoogleLogin({
+    flow: 'auth-code',
     onSuccess: async (tokenResponse) => {
-      try {
-        console.log('✅ (Login) tokenResponse:', tokenResponse);
-        const accessToken = tokenResponse.access_token;
-        console.log('✅ (Login) accessToken:', accessToken);
-
-        // Popup 방식(PC) 에서는 access_token이 즉시 내려오는데, 모바일 implicit에서도 아래 로직은 필요 없습니다.
-        if (accessToken) {
-          const res = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
-            headers: { Authorization: `Bearer ${accessToken}` },
-          });
-          console.log('✅ (Login) 즉시 사용자 정보 응답:', res.data);
-
-          const userInfo = {
-            user_id: res.data.email,
-            user_name: res.data.name,
-            social_type: 'google',
-            access_token: accessToken,
-          };
-          loginSocial(userInfo, login, navigate, setError);
-        }
-      } catch (err) {
-        console.error('❌ (Login) 구글 사용자 정보 오류:', err.response?.data || err);
-        setError('구글 로그인 실패');
+      // PC 팝업 모드에서만 호출됨. tokenResponse.code 에 authorization code가 들어옴.
+      const code = tokenResponse.code;
+      console.log('✅ LoginPage: PC에서 받은 tokenResponse.code:', code);
+      if (code) {
+        await loginSocialViaCode(code, login, navigate, setError);
       }
     },
     onError: (err) => {
-      console.error('❌ (Login) 구글 로그인 자체 실패:', err);
+      console.error('❌ LoginPage: 구글 로그인 자체 오류:', err);
       setError('구글 로그인 실패');
     },
-    flow: isMobile ? 'implicit' : 'popup',
     scope: 'openid profile email',
-    redirect_uri: isMobile ? 'https://tripd.netlify.app/login' : undefined,
+    redirect_uri: 'https://tripd.netlify.app/login', // Google 콘솔에도 등록
   });
 
-  // ------------------------------------------------------------------------
-  // 4) kakaoLogin 함수: PC → popup, 모바일 → redirect(implicit style)
-  //    (이 예제에서는 카카오도 token 직접 받아오는 implicit 방식으로 가정)
-  // ------------------------------------------------------------------------
+  // ───────────────────────────────────────────────────────────────────────────
+  // 3) 카카오 로그인: “popup”(PC) vs “implicit‐token‐redirect”(모바일)
+  //    (= Kakao도 token을 해시로 보내주기 때문에, 모바일에서 hash 파싱 필요)
+  // ───────────────────────────────────────────────────────────────────────────
+  const loginSocialViaKakao = async (accessToken) => {
+    try {
+      // Kakao accessToken을 사용해 사용자 info 조회
+      const res = await axios.get('https://kapi.kakao.com/v2/user/me', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      console.log('⭐️ LoginPage: 카카오 사용자 정보:', res.data);
+
+      const userInfo = {
+        user_id: res.data.kakao_account?.email,
+        user_name: res.data.properties?.nickname,
+        social_type: 'kakao',
+        access_token: accessToken,
+      };
+      // auth.controller.js의 loginSocial(req.body)와 동일한 형식으로 POST
+      await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/login`,
+        userInfo,
+        { headers: { 'Content-Type': 'application/json' } }
+      );
+      // 성공 시 backend가 JWT와 user 정보를 응답하므로 useAuth의 login을 호출
+      const { data } = await axios.get(`${import.meta.env.VITE_API_URL}/api/me`);
+      login(data.token, data.user);
+      navigate('/');
+    } catch (err) {
+      console.error('❌ LoginPage: 카카오 로그인 처리 실패:', err.response?.data || err);
+      setError('카카오 로그인 실패');
+    }
+  };
+
   const kakaoLogin = () => {
     if (!window.Kakao) {
       setError('카카오 SDK 로드 실패');
@@ -142,42 +131,51 @@ function LoginPageInner() {
     }
 
     if (isMobile) {
-      // 모바일 리디렉션: 토큰 받아오는 implicit 방식
+      // 모바일: implicit token 방식 (redirect_uri에 hash(#access_token=…)로 리턴)
       const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?response_type=token&client_id=${
         import.meta.env.VITE_KAKAO_CLIENT_ID
       }&redirect_uri=${encodeURIComponent('https://tripd.netlify.app/login')}&scope=profile_nickname,account_email`;
       window.location.href = kakaoAuthUrl;
     } else {
-      // PC 팝업 방식
+      // PC: 팝업 방식
       window.Kakao.Auth.login({
         scope: 'profile_nickname, account_email',
         success: async () => {
           try {
-            const res = await window.Kakao.API.request({ url: '/v2/user/me' });
-            console.log('⭐️ (Login) 카카오 사용자 정보(PC 팝업):', res);
-
             const accessToken = window.Kakao.Auth.getAccessToken();
-            const userInfo = {
-              user_id: res.kakao_account?.email,
-              user_name: res.properties?.nickname,
-              social_type: 'kakao',
-              access_token: accessToken,
-            };
-            loginSocial(userInfo, login, navigate, setError);
+            console.log('⭐️ LoginPage: 카카오 팝업으로 받은 accessToken:', accessToken);
+            await loginSocialViaKakao(accessToken);
           } catch (err) {
-            console.error('❌ (Login) 카카오 사용자 정보 오류:', err);
+            console.error('❌ LoginPage: 카카오 팝업 사용자 정보 오류:', err);
             setError('카카오 로그인 실패');
           }
         },
         fail: (err) => {
-          console.error('❌ (Login) 카카오 로그인 실패:', err);
+          console.error('❌ LoginPage: 카카오 팝업 로그인 실패:', err);
           setError('카카오 로그인 실패');
         },
       });
     }
   };
 
-  // 에러 확인 버튼 눌렀을 때 분기 처리
+  // ───────────────────────────────────────────────────────────────────────────
+  // 4) 모바일에서 카카오 implicit redirect 후 해시(#access_token=…)를 파싱
+  //    - URL 예시: https://tripd.netlify.app/login#access_token=KAO_TOKEN...
+  // ───────────────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (isMobile) {
+      const hash = window.location.hash; // e.g. "#access_token=1234abcd&..."
+      if (hash.includes('access_token')) {
+        const params = new URLSearchParams(hash.substring(1));
+        const accessToken = params.get('access_token');
+        console.log('⭐️ LoginPage: 모바일 카카오 해시에서 파싱된 accessToken:', accessToken);
+        if (accessToken) {
+          loginSocialViaKakao(accessToken);
+        }
+      }
+    }
+  }, [isMobile]);
+
   const handleErrorConfirm = () => {
     if (error.includes('회원이 아닙니다')) {
       navigate('/register');
@@ -199,7 +197,7 @@ function LoginPageInner() {
       <h2 className="text-2xl font-bold mb-8 text-gray-800">로그인</h2>
 
       <div className="space-y-4 w-full max-w-xs">
-        {/* Google 로그인 버튼 */}
+        {/* 구글 로그인 버튼 */}
         <button
           onClick={() => googleLogin()}
           className="flex items-center justify-center gap-2 w-full py-2 border border-gray-300 rounded bg-white hover:bg-gray-50 shadow"
@@ -208,7 +206,7 @@ function LoginPageInner() {
           <span className="text-sm text-gray-700">구글로 시작하기</span>
         </button>
 
-        {/* Kakao 로그인 버튼 */}
+        {/* 카카오 로그인 버튼 */}
         <button
           onClick={kakaoLogin}
           className="flex items-center justify-center gap-2 w-full py-2 rounded bg-[#FEE500] hover:brightness-95 shadow"

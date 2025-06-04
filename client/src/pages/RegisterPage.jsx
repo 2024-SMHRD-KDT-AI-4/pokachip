@@ -13,22 +13,22 @@ const initKakao = () => {
 };
 
 /**
- * 회원가입 요청을 보내는 함수.
- * auth.controller.js 의 registerSocial 엔드포인트 (/api/register) 을 호출합니다.
- * userInfo: { user_id, user_name, social_type, access_token }
+ * 구글에서 받은 authorization code를 백엔드로 전달하여
+ * Google 서버에서 access_token 교환 → userinfo 조회 → 회원가입 처리 요청
+ * (auth.controller.js의 registerSocial에 해당)
  */
-const registerSocial = async (userInfo, navigate, setError) => {
+const registerSocialViaCode = async (code, navigate, setError) => {
   try {
     const res = await axios.post(
       `${import.meta.env.VITE_API_URL}/api/register`,
-      userInfo,
+      { code, social_type: 'google' },
       { headers: { 'Content-Type': 'application/json' } }
     );
     if (res.data.message === '회원가입 되었습니다') {
       setError('회원가입 되었습니다');
     }
   } catch (err) {
-    console.error('회원가입 오류:', err.response?.data || err);
+    console.error('구글 회원가입(api/register) 실패:', err.response?.data || err);
     if (err.response?.status === 409) {
       setError('이미 가입된 이메일입니다.');
     } else {
@@ -46,111 +46,72 @@ function RegisterPageInner() {
   useEffect(() => {
     initKakao();
 
-    // --------------------------------------------------------------------------------
-    // 1) 모바일 “implicit redirect” 방식에서 되돌아온 URL 해시( #access_token=... )를 파싱
-    //    - 구글: https://tripd.netlify.app/register#access_token=...  
-    //    - 카카오: https://tripd.netlify.app/register#access_token=...
+    // ───────────────────────────────────────────────────────────────────────────
+    // 1) 모바일 “Auth-Code” 방식에서 되돌아온 URL 처리
     //
-    //    그 해시에 붙은 access_token을 이용해 사용자 정보 조회 → registerSocial 호출
-    // --------------------------------------------------------------------------------
-    const hash = window.location.hash; // "#access_token=abc…&…"
-    if (isMobile && hash.includes('access_token')) {
-      const params = new URLSearchParams(hash.substring(1));
-      const accessToken = params.get('access_token');
-      console.log('⭐️ (Register) 모바일 해시에서 파싱된 accessToken:', accessToken);
-
-      if (accessToken) {
-        // 1-1) Google userinfo 조회
-        if (location.pathname.includes('/register') && window.location.href.includes('google')) {
-          axios
-            .get('https://www.googleapis.com/oauth2/v3/userinfo', {
-              headers: { Authorization: `Bearer ${accessToken}` },
-            })
-            .then((res) => {
-              console.log('⭐️ (Register) 구글 redirect 후 사용자 정보:', res.data);
-              const userInfo = {
-                user_id: res.data.email,
-                user_name: res.data.name,
-                social_type: 'google',
-                access_token: accessToken,
-              };
-              registerSocial(userInfo, navigate, setError);
-            })
-            .catch((err) => {
-              console.error('❌ (Register) 구글 사용자 정보 조회 오류:', err.response || err);
-              setError('구글 회원가입 실패');
-            });
-        }
-        // 1-2) Kakao userinfo 조회
-        else if (location.pathname.includes('/register') && window.location.href.includes('kakao')) {
-          axios
-            .get('https://kapi.kakao.com/v2/user/me', {
-              headers: { Authorization: `Bearer ${accessToken}` },
-            })
-            .then((res) => {
-              console.log('⭐️ (Register) 카카오 redirect 후 사용자 정보:', res.data);
-              const userInfo = {
-                user_id: res.data.kakao_account?.email,
-                user_name: res.data.properties?.nickname,
-                social_type: 'kakao',
-                access_token: accessToken,
-              };
-              registerSocial(userInfo, navigate, setError);
-            })
-            .catch((err) => {
-              console.error('❌ (Register) 카카오 사용자 정보 조회 오류:', err.response || err);
-              setError('카카오 회원가입 실패');
-            });
-        }
-      }
+    //    예시: https://tripd.netlify.app/register?code=4/XYZ...&scope=...
+    //    URLSearchParams로 code를 가져와 registerSocialViaCode(code) 호출
+    // ───────────────────────────────────────────────────────────────────────────
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    if (isMobile && code) {
+      console.log('⭐️ RegisterPage: 모바일에서 받은 code:', code);
+      registerSocialViaCode(code, navigate, setError);
     }
-  }, [isMobile, navigate, location]);
+  }, [isMobile, navigate, location.key]);
 
-  // ------------------------------------------------------------------------
-  // 2) useGoogleLogin 훅을 사용해서, PC(팝업) / 모바일(implicit redirect) 자동 분기
-  //    - flow: 'implicit'
+  // ───────────────────────────────────────────────────────────────────────────
+  // 2) useGoogleLogin 훅을 “auth-code” 흐름으로 사용
+  //    - flow: 'auth-code'
   //    - scope: 'openid profile email'
-  //    - redirect_uri: 모바일 시 “https://tripd.netlify.app/register” 으로 콜백
-  // ------------------------------------------------------------------------
+  //    - redirect_uri: 'https://tripd.netlify.app/register'
+  // ───────────────────────────────────────────────────────────────────────────
   const googleLogin = useGoogleLogin({
+    flow: 'auth-code',
     onSuccess: async (tokenResponse) => {
-      try {
-        console.log('⭐️ (Register) tokenResponse:', tokenResponse);
-        const accessToken = tokenResponse.access_token;
-        console.log('⭐️ (Register) accessToken:', accessToken);
-
-        if (accessToken) {
-          const res = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
-            headers: { Authorization: `Bearer ${accessToken}` },
-          });
-          console.log('⭐️ (Register) 즉시 사용자 정보:', res.data);
-
-          const userInfo = {
-            user_id: res.data.email,
-            user_name: res.data.name,
-            social_type: 'google',
-            access_token: accessToken,
-          };
-          registerSocial(userInfo, navigate, setError);
-        }
-      } catch (err) {
-        console.error('❌ (Register) 구글 사용자 정보 오류:', err.response?.data || err);
-        setError('구글 회원가입 실패');
+      const code = tokenResponse.code;
+      console.log('⭐️ RegisterPage: PC에서 받은 tokenResponse.code:', code);
+      if (code) {
+        await registerSocialViaCode(code, navigate, setError);
       }
     },
     onError: (err) => {
-      console.error('❌ (Register) 구글 로그인 자체 실패:', err);
+      console.error('❌ RegisterPage: 구글 로그인 자체 실패:', err);
       setError('구글 회원가입 실패');
     },
-    flow: isMobile ? 'implicit' : 'popup',
     scope: 'openid profile email',
-    redirect_uri: isMobile ? 'https://tripd.netlify.app/register' : undefined,
+    redirect_uri: 'https://tripd.netlify.app/register',
   });
 
-  // ------------------------------------------------------------------------
-  // 3) kakaoLogin 함수: PC → popup, 모바일 → redirect(implicit style)
-  //    - flow: implicit token 방식
-  // ------------------------------------------------------------------------
+  // ───────────────────────────────────────────────────────────────────────────
+  // 3) 카카오 회원가입: PC → popup, 모바일 → implicit redirect 방식
+  // ───────────────────────────────────────────────────────────────────────────
+  const registerSocialViaKakao = async (accessToken) => {
+    try {
+      const res = await axios.get('https://kapi.kakao.com/v2/user/me', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      console.log('⭐️ RegisterPage: 카카오 사용자 정보:', res.data);
+
+      const userInfo = {
+        user_id: res.data.kakao_account?.email,
+        user_name: res.data.properties?.nickname,
+        social_type: 'kakao',
+        access_token: accessToken,
+      };
+      await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/register`,
+        userInfo,
+        { headers: { 'Content-Type': 'application/json' } }
+      );
+      // 성공 메시지를 받으면 모달을 띄운 뒤 “로그인 페이지”로 안내
+      setError('회원가입 되었습니다');
+    } catch (err) {
+      console.error('❌ RegisterPage: 카카오 회원가입 실패:', err.response?.data || err);
+      setError('카카오 회원가입 실패');
+    }
+  };
+
   const kakaoLogin = () => {
     if (!window.Kakao) {
       setError('카카오 SDK 로드 실패');
@@ -158,38 +119,50 @@ function RegisterPageInner() {
     }
 
     if (isMobile) {
+      // 모바일: implicit token 방식
       const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?response_type=token&client_id=${
         import.meta.env.VITE_KAKAO_CLIENT_ID
       }&redirect_uri=${encodeURIComponent('https://tripd.netlify.app/register')}&scope=profile_nickname,account_email`;
       window.location.href = kakaoAuthUrl;
     } else {
+      // PC: popup 방식
       window.Kakao.Auth.login({
         scope: 'profile_nickname, account_email',
         success: async () => {
           try {
-            const res = await window.Kakao.API.request({ url: '/v2/user/me' });
-            console.log('⭐️ (Register) 카카오 사용자 정보(PC 팝업):', res);
-
             const accessToken = window.Kakao.Auth.getAccessToken();
-            const userInfo = {
-              user_id: res.kakao_account?.email,
-              user_name: res.properties?.nickname,
-              social_type: 'kakao',
-              access_token: accessToken,
-            };
-            registerSocial(userInfo, navigate, setError);
+            console.log('⭐️ RegisterPage: 카카오 팝업 accessToken:', accessToken);
+            await registerSocialViaKakao(accessToken);
           } catch (err) {
-            console.error('❌ (Register) 카카오 사용자 정보 오류:', err);
+            console.error('❌ RegisterPage: 카카오 팝업 사용자 정보 오류:', err);
             setError('카카오 회원가입 실패');
           }
         },
         fail: (err) => {
-          console.error('❌ (Register) 카카오 로그인 실패:', err);
+          console.error('❌ RegisterPage: 카카오 팝업 로그인 실패:', err);
           setError('카카오 회원가입 실패');
         },
       });
     }
   };
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // 4) 모바일 카카오 implicit 리디렉션 후 해시 파싱
+  //    - URL 예시: https://tripd.netlify.app/register#access_token=KAO_TOKEN
+  // ───────────────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (isMobile) {
+      const hash = window.location.hash; // "#access_token=xyz123…"
+      if (hash.includes('access_token')) {
+        const params = new URLSearchParams(hash.substring(1));
+        const accessToken = params.get('access_token');
+        console.log('⭐️ RegisterPage: 모바일 카카오 해시 accessToken:', accessToken);
+        if (accessToken) {
+          registerSocialViaKakao(accessToken);
+        }
+      }
+    }
+  }, [isMobile]);
 
   const handleErrorConfirm = () => {
     if (error.includes('이미 가입된 이메일') || error.includes('회원가입 되었습니다')) {
@@ -212,7 +185,7 @@ function RegisterPageInner() {
       <h2 className="text-2xl font-bold mb-8 text-gray-800">회원가입</h2>
 
       <div className="space-y-4 w-full max-w-xs">
-        {/* Google 회원가입 버튼 */}
+        {/* 구글 회원가입 버튼 */}
         <button
           onClick={() => googleLogin()}
           className="flex items-center justify-center gap-2 w-full py-2 border border-gray-300 rounded bg-white hover:bg-gray-50 shadow"
@@ -221,7 +194,7 @@ function RegisterPageInner() {
           <span className="text-sm text-gray-700">구글로 가입하기</span>
         </button>
 
-        {/* Kakao 회원가입 버튼 */}
+        {/* 카카오 회원가입 버튼 */}
         <button
           onClick={kakaoLogin}
           className="flex items-center justify-center gap-2 w-full py-2 rounded bg-[#FEE500] hover:brightness-95 shadow"
