@@ -1,8 +1,10 @@
+// src/pages/RegisterPage.jsx
+
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { GoogleOAuthProvider, useGoogleLogin } from '@react-oauth/google';
 import axios from 'axios';
-import { FaArrowLeftLong } from "react-icons/fa6";
+import { FaArrowLeftLong } from 'react-icons/fa6';
 
 const initKakao = () => {
   if (window.Kakao && !window.Kakao.isInitialized()) {
@@ -12,15 +14,16 @@ const initKakao = () => {
 
 const registerToBackend = async (userInfo, navigate, setError) => {
   try {
-    const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/register`, userInfo, {
-      headers: { 'Content-Type': 'application/json' },
-    });
-
+    const res = await axios.post(
+      `${import.meta.env.VITE_API_URL}/api/register`,
+      userInfo,
+      { headers: { 'Content-Type': 'application/json' } }
+    );
     if (res.data.message === '회원가입 되었습니다') {
-      setError("회원가입 되었습니다");
+      setError('회원가입 되었습니다');
     }
   } catch (err) {
-    console.error(err);
+    console.error('회원가입 실패:', err);
     if (err.response?.status === 409) {
       setError('이미 가입된 이메일입니다.');
     } else {
@@ -32,28 +35,51 @@ const registerToBackend = async (userInfo, navigate, setError) => {
 function RegisterPageInner() {
   const navigate = useNavigate();
   const [error, setError] = useState('');
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
   useEffect(() => {
     initKakao();
-  }, []);
 
-  const handleErrorConfirm = () => {
-    if (error.includes("이미 가입된 이메일") || error.includes("회원가입 되었습니다")) {
-      navigate("/login");
-    } else {
-      setError("");
+    // 모바일에서 redirect로 돌아올 때 해시(#access_token=...) 파싱
+    const hash = window.location.hash;
+    if (hash.includes('access_token')) {
+      const params = new URLSearchParams(hash.substring(1));
+      const accessToken = params.get('access_token');
+      console.log('⭐️ (회원가입) 해시에서 파싱된 토큰:', accessToken);
+
+      if (accessToken) {
+        axios
+          .get('https://www.googleapis.com/oauth2/v3/userinfo', {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          })
+          .then((res) => {
+            console.log('⭐️ (회원가입) 리디렉션 후 사용자 정보:', res.data);
+            const userInfo = {
+              user_id: res.data.email,
+              user_name: res.data.name,
+              social_type: 'google',
+              access_token: accessToken,
+            };
+            registerToBackend(userInfo, navigate, setError);
+          })
+          .catch((err) => {
+            console.error('❌ (회원가입) 리디렉션 후 사용자 정보 오류:', err.response || err);
+            setError('구글 회원가입 실패');
+          });
+      }
     }
-  };
-
-  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  }, [navigate]);
 
   const googleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       try {
         const accessToken = tokenResponse.access_token;
+        console.log('⭐️ (회원가입) tokenResponse:', tokenResponse);
+
         const res = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
+        console.log('⭐️ (회원가입) 즉시 사용자 정보:', res.data);
 
         const userInfo = {
           user_id: res.data.email,
@@ -61,54 +87,66 @@ function RegisterPageInner() {
           social_type: 'google',
           access_token: accessToken,
         };
-
         await registerToBackend(userInfo, navigate, setError);
       } catch (err) {
-        console.error('구글 회원가입 실패:', err);
+        console.error('❌ (회원가입) 구글 사용자 정보 오류:', err.response?.data || err);
         setError('구글 회원가입 실패');
       }
     },
-    onError: () => setError('구글 회원가입 실패'),
+    onError: (err) => {
+      console.error('❌ (회원가입) 구글 로그인 자체 실패:', err);
+      setError('구글 회원가입 실패');
+    },
     flow: isMobile ? 'implicit' : 'popup',
-    redirect_uri: isMobile ? "https://tripd.netlify.app" : undefined,
+    scope: 'openid profile email',                    // ← scope 추가
+    redirect_uri: isMobile ? 'https://tripd.netlify.app' : undefined, // ← 정확한 도메인
   });
 
   const kakaoLogin = () => {
     if (!window.Kakao) return setError('카카오 SDK 로드 실패');
 
     if (isMobile) {
-      // ✅ 모바일 리디렉션 방식
+      // 모바일: redirect 방식
       const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?response_type=code&client_id=${
         import.meta.env.VITE_KAKAO_CLIENT_ID
-      }&redirect_uri=${encodeURIComponent("https://tripd.netlify.app/kakao-callback")}`;
-
+      }&redirect_uri=${encodeURIComponent('https://tripd.netlify.app/kakao-callback')}`;
       window.location.href = kakaoAuthUrl;
     } else {
-      // ✅ 웹 팝업 방식
+      // 웹: popup 방식
       window.Kakao.Auth.login({
         scope: 'profile_nickname, account_email',
         success: async () => {
           try {
             const res = await window.Kakao.API.request({ url: '/v2/user/me' });
-
+            console.log('⭐️ (회원가입) 카카오 사용자 정보:', res);
             const userInfo = {
               user_id: res.kakao_account?.email,
               user_name: res.properties?.nickname,
               social_type: 'kakao',
               access_token: window.Kakao.Auth.getAccessToken(),
             };
-
             await registerToBackend(userInfo, navigate, setError);
           } catch (err) {
-            console.error('카카오 회원가입 실패:', err);
+            console.error('❌ (회원가입) 카카오 사용자 정보 오류:', err);
             setError('카카오 회원가입 실패');
           }
         },
         fail: (err) => {
-          console.error('카카오 로그인 실패', err);
+          console.error('❌ (회원가입) 카카오 로그인 실패:', err);
           setError('카카오 회원가입 실패');
         },
       });
+    }
+  };
+
+  const handleErrorConfirm = () => {
+    if (
+      error.includes('이미 가입된 이메일') ||
+      error.includes('회원가입 되었습니다')
+    ) {
+      navigate('/login');
+    } else {
+      setError('');
     }
   };
 
