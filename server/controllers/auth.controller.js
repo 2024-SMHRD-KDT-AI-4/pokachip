@@ -78,6 +78,9 @@ exports.registerSocial = async (req, res) => {
 // ✅ 모바일용 구글 로그인 code → access_token → userinfo
 exports.exchangeGoogleCode = async (req, res) => {
   const { code, redirect_uri } = req.body;
+  console.log("✅ 클라이언트 ID:", process.env.GOOGLE_CLIENT_ID);
+  console.log("✅ 시크릿:", process.env.GOOGLE_CLIENT_SECRET);
+  console.log("✅ 최종 redirect_uri 전달됨:", redirect_uri);
 
   if (!code || !redirect_uri) {
     return res.status(400).json({ error: "code 또는 redirect_uri 누락" });
@@ -91,11 +94,22 @@ exports.exchangeGoogleCode = async (req, res) => {
     params.append("redirect_uri", redirect_uri);
     params.append("grant_type", "authorization_code");
 
+    console.log("🔑 구글 토큰 요청 시작");
+    console.log("📦 code:", code);
+    console.log("📦 redirect_uri:", redirect_uri);
+
     const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: params.toString(),
     });
+
+    // ✅ 추가된 디버깅 코드
+    if (!tokenRes.ok) {
+      const errMsg = await tokenRes.text();
+      console.error("❌ 토큰 요청 실패:", tokenRes.status, errMsg);
+      return res.status(401).json({ error: "토큰 요청 실패", detail: errMsg });
+    }
 
     const tokenData = await tokenRes.json();
 

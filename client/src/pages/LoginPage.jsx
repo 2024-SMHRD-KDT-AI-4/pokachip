@@ -95,10 +95,7 @@ function LoginPageInner() {
     onError: () => setError("구글 로그인 실패"),
     flow: isMobile ? "auth-code" : "implicit",
     ...(isMobile && {
-      redirect_uri:
-        window.location.hostname === "localhost"
-          ? "http://localhost:5173/login"
-          : "https://tripd.netlify.app/login",
+        redirect_uri: window.location.origin + "/login",
     }),
   });
 
