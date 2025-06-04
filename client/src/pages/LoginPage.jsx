@@ -18,7 +18,12 @@ const loginToBackend = async (userInfo, login, navigate, setError) => {
       userInfo,
       { headers: { "Content-Type": "application/json" } }
     );
+
     if (res.data.token) {
+      // ✅ 명시적으로 localStorage에 저장 (모바일 대응)
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+
       login(res.data.token, res.data.user);
       navigate("/");
     }
@@ -43,7 +48,6 @@ function LoginPageInner() {
     onSuccess: async (tokenResponse) => {
       try {
         if (isMobile) {
-          // 모바일: authorization code → 서버에서 access_token 요청
           const res = await axios.post(
             `${import.meta.env.VITE_API_URL}/api/google-token`,
             {
@@ -66,7 +70,6 @@ function LoginPageInner() {
 
           await loginToBackend(userInfo, login, navigate, setError);
         } else {
-          // PC: implicit flow → access_token 직접 수신
           const accessToken = tokenResponse.access_token;
           const res = await axios.get(
             "https://www.googleapis.com/oauth2/v3/userinfo",
