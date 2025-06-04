@@ -50,17 +50,22 @@ function LoginPageInner() {
   };
 
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
   const googleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       try {
+        console.log("✅ tokenResponse:", tokenResponse);
+
         const accessToken = tokenResponse.access_token;
+        console.log("✅ accessToken:", accessToken);
+
         const res = await axios.get(
           "https://www.googleapis.com/oauth2/v3/userinfo",
           {
             headers: { Authorization: `Bearer ${accessToken}` },
           }
         );
+
+        console.log("✅ 사용자 정보 응답:", res.data);
 
         const userInfo = {
           user_id: res.data.email,
@@ -71,23 +76,26 @@ function LoginPageInner() {
 
         await loginToBackend(userInfo, login, navigate, setError);
       } catch (err) {
-        console.error("구글 사용자 정보 오류", err);
+        console.error("❌ 구글 사용자 정보 오류:", err.response?.data || err);
         setError("구글 로그인 실패");
       }
     },
-    onError: () => setError("구글 로그인 실패"),
+    onError: (err) => {
+      console.error("❌ 구글 로그인 자체 실패:", err);
+      setError("구글 로그인 실패");
+    },
     flow: isMobile ? "implicit" : "popup",
     redirect_uri: isMobile ? "https://tripd.netlify.app" : undefined,
   });
+
 
   const kakaoLogin = () => {
     if (!window.Kakao) return setError("카카오 SDK 로드 실패");
 
     if (isMobile) {
       // ✅ 모바일에서는 redirect 방식 사용
-      const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?response_type=code&client_id=${
-        import.meta.env.VITE_KAKAO_CLIENT_ID
-      }&redirect_uri=${encodeURIComponent("https://tripd.netlify.app/kakao-callback")}`;
+      const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?response_type=code&client_id=${import.meta.env.VITE_KAKAO_CLIENT_ID
+        }&redirect_uri=${encodeURIComponent("https://tripd.netlify.app/kakao-callback")}`;
 
       window.location.href = kakaoAuthUrl;
     } else {
