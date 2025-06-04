@@ -110,9 +110,8 @@ export default function MapPage() {
           map,
           icon: {
             url: iconUrl,
-            scaledSize: new google.maps.Size(45, 45), // 항상 고정 크기 (픽셀 단위)
+            scaledSize: new google.maps.Size(40, 40), // 항상 고정 크기 (픽셀 단위)
             anchor: new google.maps.Point(20, 40),    // 기준점 조정 (이미지 중앙 하단 등)
-
           },
         });
         markersRef.current.push(marker);
@@ -158,12 +157,26 @@ export default function MapPage() {
       });
 
       map.fitBounds(bounds);
+      // ✅ 줌에 따라 마커 크기 조정
+      google.maps.event.addListener(map, "zoom_changed", () => {
+        const zoom = map.getZoom();
+        const newSize = Math.min(zoom * 4, 64);
+
+        markersRef.current.forEach((marker) => {
+          const iconUrl = marker.getIcon().url;
+          marker.setIcon({
+            url: iconUrl,
+            scaledSize: new google.maps.Size(newSize, newSize),
+          });
+        });
+      });
     });
   }, [photos, navigate]);
 
+
   return (
     <div className="p-4 bg-white min-h-screen">
-      <h2 className="text-lg font-bold mb-4">🗺️ 여행 지도</h2>
+      <h1 className="text-2xl font-semibold mb-8">MAP</h1>
 
       {/* 지도 영역 */}
       <div

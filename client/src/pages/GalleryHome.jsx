@@ -32,6 +32,7 @@ function GalleryHome() {
 
   return (
     <div className="p-4 max-w-[420px] mx-auto bg-white min-h-screen">
+      <h1 className="text-center text-2xl font-semibold mb-8">GALLERY</h1>
       {/* ✅ 상단 정보 카드 (위 여백 mt-6 추가) */}
       <div className="grid grid-cols-2 gap-4 mb-6 mt-6">
         <div className="text-center p-4 rounded-xl border">

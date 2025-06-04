@@ -130,7 +130,7 @@ function MainPage() {
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-[#fff] max-w-full mx-auto px-2">
       <div className="px-2 pt-6">
-        <h1 className="text-2xl font-bold text-gray-800">나의 여행 일기</h1>
+        <h1 className="text-2xl font-bold text-gray-800">DIARY</h1>
       </div>
 
       <main className="flex-1 overflow-y-scroll hide-scrollbar px-0 py-4 space-y-8">
@@ -170,20 +170,23 @@ function MainPage() {
         )}
 
         {isLoggedIn && diaries.length === 0 && (
-          <div className="text-center text-gray-500 px-4 py-8">
+          <div className="text-center text-gray-500 px-4 py-8 space-y-6">
             <p className="text-sm">아직 작성된 일기가 없어요 📝</p>
-            <p className="text-sm text-blue-600 font-semibold mt-2">
-              첫 여행을 기록해보세요!
-            </p>
+            <button
+              onClick={() => navigate("/diarycreate")}
+              className="bg-blue-100 hover:bg-blue-200 text-gray-700 font-semibold px-6 py-3 rounded-full shadow-md cursor-pointer transition animate-bounce"
+            >
+             첫 여행 기록하기
+            </button>
           </div>
         )}
 
-        {isLoggedIn && (
+        {isLoggedIn && diaries.length != 0 && (
           <div className="px-4">
             <div className="flex justify-center mt-6 mb-16">
               <button
                 onClick={() => navigate("/diarycreate")}
-                className="bg-blue-100 hover:bg-blue-200 text-gray-700 font-semibold px-6 py-3 rounded-full shadow-md cursor-pointer transition animate-bounce"
+                className="bg-blue-100 hover:bg-blue-200 text-gray-700 font-semibold px-6 py-3 rounded-full shadow-md cursor-pointer transition"
               >
                 새로운 여행 기록하기
               </button>

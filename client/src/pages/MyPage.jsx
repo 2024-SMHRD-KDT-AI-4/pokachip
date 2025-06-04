@@ -45,7 +45,7 @@ function MyPage() {
 
     return (
         <div className="w-[420px] mx-auto min-h-screen bg-white p-4 font-sans">
-            <h2 className="text-center text-xl font-semibold mb-8">MY PAGE</h2>
+            <h1 className="text-center text-2xl font-semibold mb-8">MY PAGE</h1>
 
             {/* 유저 정보 */}
             <div className="mb-6">
