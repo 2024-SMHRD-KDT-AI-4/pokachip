@@ -92,6 +92,12 @@ function LoginPageInner() {
   onError: () => setError("구글 로그인 실패"),
   flow: isMobile ? "auth-code" : "implicit",
 });
+// 실제 버튼에 연결될 함수를 분리하거나, 기존 함수 내에 로그 추가
+const handleGoogleLoginClick = () => {
+  // 모바일에서 로그인 시도 직전의 정확한 URL 확인
+  console.log("Mobile client window.location.href before Google login:", window.location.href);
+  googleLogin(); // useGoogleLoginフック으로 얻은 로그인 함수 호출
+};
 
   const kakaoLogin = () => {
     if (!window.Kakao) return setError("카카오 SDK 로드 실패");

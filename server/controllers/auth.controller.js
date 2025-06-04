@@ -77,10 +77,14 @@ exports.registerSocial = async (req, res) => {
 
 // ✅ 모바일용 구글 로그인 code → access_token → userinfo
 exports.exchangeGoogleCode = async (req, res) => {
-  const { code, redirect_uri } = req.body;
-  console.log("✅ 클라이언트 ID:", process.env.GOOGLE_CLIENT_ID);
-  console.log("✅ 시크릿:", process.env.GOOGLE_CLIENT_SECRET);
-  console.log("✅ 최종 redirect_uri 전달됨:", redirect_uri);
+  const { code } = req.body;
+
+  const redirect_uri =
+    process.env.NODE_ENV === "development"
+      ? "http://localhost:5173/login"
+      : "https://tripd.netlify.app/login";
+
+  console.log("✅ 최종 redirect_uri:", redirect_uri);
 
   if (!code || !redirect_uri) {
     return res.status(400).json({ error: "code 또는 redirect_uri 누락" });
