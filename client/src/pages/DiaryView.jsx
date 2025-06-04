@@ -29,7 +29,6 @@ function DiaryView() {
     fetchDiary();
   }, [id]);
 
-  // 날짜 포맷
   function formatDate(dateString) {
     const date = new Date(dateString);
     const yyyy = date.getFullYear();
@@ -38,7 +37,6 @@ function DiaryView() {
     return `${yyyy}-${mm}-${dd}`;
   }
 
-  // 삭제 실행
   const handleDeleteConfirm = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -46,26 +44,23 @@ function DiaryView() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      // ✅ 삭제 성공 시: 알림 후 메인페이지로 이동
       if (res.status === 200) {
         alert("삭제가 완료되었습니다.");
-        navigate("/"); // 메인페이지로 이동
+        navigate("/");
       }
     } catch (error) {
-      // ❌ 삭제 실패 시: 알림만 띄우고 모달만 닫기
       console.error("삭제 실패:", error);
       alert("삭제에 실패했습니다.");
-      setShowModal(false); // 모달 닫기
+      setShowModal(false);
     }
   };
-
 
   if (!diary) return <p className="text-center mt-10">일기를 불러오는 중입니다...</p>;
 
   return (
     <div className="min-h-screen bg-white max-w-[420px] mx-auto font-[Pretendard-Regular] relative">
 
-      {/* 🔙 상단 바 */}
+      {/* 🔙 상단 바 (로고 + 뒤로가기) */}
       <div className="sticky top-0 z-20 bg-white px-4 pt-4 pb-2 flex items-center justify-between shadow-sm">
         <button
           className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 text-xl font-bold flex items-center justify-center shadow-sm transition"
@@ -73,9 +68,13 @@ function DiaryView() {
         >
           ←
         </button>
-        <h2 className="text-lg font-bold text-gray-800 mx-auto absolute left-1/2 -translate-x-1/2">
-          📓 나의 여행 일기
-        </h2>
+
+        <img
+          src="/logo.png"
+          alt="로고"
+          className="h-10 mx-auto cursor-pointer absolute left-1/2 -translate-x-1/2"
+          onClick={() => navigate("/")}
+        />
       </div>
 
       {/* 📸 사진 캐러셀 */}
@@ -106,21 +105,18 @@ function DiaryView() {
       {/* ✏️ 본문 내용 */}
       <div className="px-6 pb-10 text-center">
         <h3 className="text-xl font-bold mb-1">{diary.diary_title}</h3>
-
         <p className="text-sm text-gray-500 mb-4">
           {diary.trip_date.includes("~")
             ? diary.trip_date
             : formatDate(diary.trip_date)}
         </p>
 
-        {/* 아이콘 영역 (비워둠) */}
         <div className="flex justify-center gap-6 mb-6 h-6"></div>
 
         <div className="text-gray-800 whitespace-pre-line leading-relaxed mb-8">
           {diary.diary_content}
         </div>
 
-        {/* 🗑 삭제 버튼 (디자인 반영) */}
         <div className="flex justify-center">
           <button
             className="border border-gray-400 text-gray-500 rounded-full px-6 py-2 text-sm transition-colors duration-200 hover:border-sky-500 hover:text-sky-500"

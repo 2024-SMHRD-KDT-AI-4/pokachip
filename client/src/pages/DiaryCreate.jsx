@@ -12,7 +12,7 @@ function DiaryCreate() {
   const [tone, setTone] = useState('감성적인');
   const [weather, setWeather] = useState('');
   const [showOptions, setShowOptions] = useState(false);
-  const [isLoading, setIsLoading] = useState(false); // ✅ 로딩 상태 추가
+  const [isLoading, setIsLoading] = useState(false);
 
   const userData = localStorage.getItem('user');
   let userEmail = null;
@@ -44,7 +44,7 @@ function DiaryCreate() {
     formData.append('tone', tone);
     formData.append('weather', weather);
 
-    setIsLoading(true); // ✅ 로딩 시작
+    setIsLoading(true);
 
     try {
       const token = localStorage.getItem('token');
@@ -52,9 +52,7 @@ function DiaryCreate() {
         'http://localhost:5000/api/diary/image-generate',
         formData,
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
 
@@ -65,7 +63,7 @@ function DiaryCreate() {
       console.error('일기 생성 실패:', err);
       alert('GPT 호출 실패');
     } finally {
-      setIsLoading(false); // ✅ 로딩 종료
+      setIsLoading(false);
     }
   };
 
@@ -89,34 +87,28 @@ function DiaryCreate() {
   );
 
   return (
-  <div className="min-h-screen bg-gradient-to-b from-white via-blue-50 to-blue-100 px-4 py-8 pt-28 max-w-[420px] mx-auto">
+    <div className="min-h-screen bg-gradient-to-b from-white via-blue-50 to-blue-100 px-4 py-8 pt-28 max-w-[420px] mx-auto">
 
+      {/* 🔝 상단 고정 영역: 뒤로가기 + 로고 */}
+      <div className="fixed top-0 left-0 w-full bg-white z-50">
+        <div className="max-w-[420px] mx-auto flex items-center px-4 py-3">
+          <button
+            onClick={() => navigate("/")}
+            className="text-blue-400 text-2xl font-bold"
+          >
+            ←
+          </button>
 
-    {/* 상단 고정 영역: 뒤로가기 + 로고 */}
-<div className="fixed top-0 left-0 w-full bg-white z-50">
-  <div className="max-w-[420px] mx-auto flex items-center px-4 py-3">
-    {/* ← 버튼 */}
-    <button
-      onClick={() => navigate("/")}
-      className="text-blue-400 text-2xl font-bold"
-    >
-      ←
-    </button>
-
-    {/* 로고 */}
-    <div className="flex-grow flex justify-center">
-      <img
-        src="/logo.png"
-        alt="Site Logo"
-        className="h-16 object-contain"
-      />
-    </div>
-  </div>
-</div>
-
-
-    
-
+          <div className="flex-grow flex justify-center">
+            <img
+              src="/logo.png"
+              alt="Site Logo"
+              className="h-16 object-contain cursor-pointer"
+              onClick={() => navigate("/")}
+            />
+          </div>
+        </div>
+      </div>
 
       {/* 📤 사진 업로드 */}
       <div className="bg-white rounded-xl shadow-md p-4 mb-6">
@@ -153,6 +145,7 @@ function DiaryCreate() {
         </button>
       </div>
 
+      {/* 추가 선택 옵션 */}
       {showOptions && (
         <div className="space-y-4 mb-8">
           <SelectionGroup
