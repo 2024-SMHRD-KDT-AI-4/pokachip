@@ -42,19 +42,48 @@ function LoginPageInner() {
   const googleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       try {
-        const accessToken = tokenResponse.access_token;
-        const res = await axios.get("https://www.googleapis.com/oauth2/v3/userinfo", {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
+        if (isMobile) {
+          // 모바일: authorization code → 서버에서 access_token 요청
+          const res = await axios.post(
+            `${import.meta.env.VITE_API_URL}/api/google-token`,
+            {
+              code: tokenResponse.code,
+              redirect_uri:
+                window.location.hostname === "localhost"
+                  ? "http://localhost:5173/login"
+                  : "https://tripd.netlify.app/login",
+            }
+          );
 
-        const userInfo = {
-          user_id: res.data.email,
-          user_name: res.data.name,
-          social_type: "google",
-          access_token: accessToken,
-        };
+          const { user_id, user_name, access_token } = res.data;
 
-        await loginToBackend(userInfo, login, navigate, setError);
+          const userInfo = {
+            user_id,
+            user_name,
+            social_type: "google",
+            access_token,
+          };
+
+          await loginToBackend(userInfo, login, navigate, setError);
+        } else {
+          // PC: implicit flow → access_token 직접 수신
+          const accessToken = tokenResponse.access_token;
+          const res = await axios.get(
+            "https://www.googleapis.com/oauth2/v3/userinfo",
+            {
+              headers: { Authorization: `Bearer ${accessToken}` },
+            }
+          );
+
+          const userInfo = {
+            user_id: res.data.email,
+            user_name: res.data.name,
+            social_type: "google",
+            access_token: accessToken,
+          };
+
+          await loginToBackend(userInfo, login, navigate, setError);
+        }
       } catch (err) {
         console.error("구글 사용자 정보 오류", err);
         setError("구글 로그인 실패");
@@ -63,9 +92,10 @@ function LoginPageInner() {
     onError: () => setError("구글 로그인 실패"),
     flow: isMobile ? "auth-code" : "implicit",
     ...(isMobile && {
-      redirect_uri: window.location.hostname === "localhost"
-        ? "http://localhost:5173/login"
-        : "https://tripd.netlify.app/login"
+      redirect_uri:
+        window.location.hostname === "localhost"
+          ? "http://localhost:5173/login"
+          : "https://tripd.netlify.app/login",
     }),
   });
 

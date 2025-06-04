@@ -1,3 +1,4 @@
+// ✅ RegisterPage.jsx 전체 수정 (모바일 코드 방식 일치)
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { GoogleOAuthProvider, useGoogleLogin } from '@react-oauth/google';
@@ -40,19 +41,40 @@ function RegisterPageInner() {
   const googleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       try {
-        const accessToken = tokenResponse.access_token;
-        const res = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
+        if (isMobile) {
+          const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/google-token`, {
+            code: tokenResponse.code,
+            redirect_uri:
+              window.location.hostname === "localhost"
+                ? "http://localhost:5173/login"
+                : "https://tripd.netlify.app/login",
+          });
 
-        const userInfo = {
-          user_id: res.data.email,
-          user_name: res.data.name,
-          social_type: 'google',
-          access_token: accessToken,
-        };
+          const { user_id, user_name, access_token } = res.data;
 
-        await registerToBackend(userInfo, navigate, setError);
+          const userInfo = {
+            user_id,
+            user_name,
+            social_type: "google",
+            access_token,
+          };
+
+          await registerToBackend(userInfo, navigate, setError);
+        } else {
+          const accessToken = tokenResponse.access_token;
+          const res = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          });
+
+          const userInfo = {
+            user_id: res.data.email,
+            user_name: res.data.name,
+            social_type: 'google',
+            access_token: accessToken,
+          };
+
+          await registerToBackend(userInfo, navigate, setError);
+        }
       } catch (err) {
         console.error('구글 회원가입 실패:', err);
         setError('구글 회원가입 실패');

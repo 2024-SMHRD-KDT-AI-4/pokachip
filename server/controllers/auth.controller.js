@@ -25,13 +25,12 @@ exports.loginSocial = async (req, res) => {
       expiresIn: "7d",
     });
 
-    // ✅ 프론트에 필요한 정보만 깔끔하게 정리해서 전달
     return res.json({
       message: "로그인 성공",
       token,
       user: {
-        user_id: rows[0].user_id, // ✅ 이메일 → user_id
-        user_name: rows[0].user_name, // ✅ 이름 → user_name
+        user_id: rows[0].user_id,
+        user_name: rows[0].user_name,
         social_type: rows[0].social_type,
       },
     });
@@ -73,5 +72,54 @@ exports.registerSocial = async (req, res) => {
   } catch (err) {
     console.error("회원가입 오류:", err);
     res.status(500).json({ error: "서버 오류" });
+  }
+};
+
+// ✅ 모바일용 구글 로그인 code → access_token → userinfo
+exports.exchangeGoogleCode = async (req, res) => {
+  const { code, redirect_uri } = req.body;
+
+  if (!code || !redirect_uri) {
+    return res.status(400).json({ error: "code 또는 redirect_uri 누락" });
+  }
+
+  try {
+    const params = new URLSearchParams();
+    params.append("code", code);
+    params.append("client_id", process.env.GOOGLE_CLIENT_ID);
+    params.append("client_secret", process.env.GOOGLE_CLIENT_SECRET);
+    params.append("redirect_uri", redirect_uri);
+    params.append("grant_type", "authorization_code");
+
+    const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: params.toString(),
+    });
+
+    const tokenData = await tokenRes.json();
+
+    if (!tokenData.access_token) {
+      return res.status(401).json({ error: "구글 access_token 발급 실패" });
+    }
+
+    const userInfoRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+      headers: { Authorization: `Bearer ${tokenData.access_token}` },
+    });
+
+    const userInfo = await userInfoRes.json();
+
+    if (!userInfo.email || !userInfo.name) {
+      return res.status(401).json({ error: "사용자 정보 가져오기 실패" });
+    }
+
+    res.json({
+      user_id: userInfo.email,
+      user_name: userInfo.name,
+      access_token: tokenData.access_token,
+    });
+  } catch (err) {
+    console.error("구글 토큰 교환 실패:", err);
+    res.status(500).json({ error: "Google 로그인 처리 중 오류 발생" });
   }
 };
