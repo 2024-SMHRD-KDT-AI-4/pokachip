@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { GoogleOAuthProvider, useGoogleLogin } from "@react-oauth/google";
 import axios from "axios";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/AuthContext"; // 경로가 맞는지 확인해주세요.
 import { FaArrowLeftLong } from "react-icons/fa6";
 
 const initKakao = () => {
@@ -20,7 +20,6 @@ const loginToBackend = async (userInfo, login, navigate, setError) => {
     );
 
     if (res.data.token) {
-      // ✅ 명시적으로 localStorage에 저장 (모바일 대응)
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
 
@@ -44,60 +43,60 @@ function LoginPageInner() {
 
   const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
 
-  const googleLogin = useGoogleLogin({
-  onSuccess: async (tokenResponse) => {
-    try {
-      if (isMobile) {
-        const res = await axios.post(
-          `${import.meta.env.VITE_API_URL}/api/google-token`,
-          {
-            code: tokenResponse.code,
-            // ✅ redirect_uri는 프론트에서 넘기지 않음
-          }
-        );
+  const googleLoginHook = useGoogleLogin({ // 변수명을 googleLogin에서 googleLoginHook으로 변경 (아래 googleLogin 함수와 이름 충돌 방지)
+    onSuccess: async (tokenResponse) => {
+      try {
+        if (isMobile) {
+          const res = await axios.post(
+            `${import.meta.env.VITE_API_URL}/api/google-token`,
+            {
+              code: tokenResponse.code,
+            }
+          );
 
-        const { user_id, user_name, access_token } = res.data;
+          const { user_id, user_name, access_token } = res.data;
 
-        const userInfo = {
-          user_id,
-          user_name,
-          social_type: "google",
-          access_token,
-        };
+          const userInfo = {
+            user_id,
+            user_name,
+            social_type: "google",
+            access_token,
+          };
 
-        await loginToBackend(userInfo, login, navigate, setError);
-      } else {
-        const accessToken = tokenResponse.access_token;
-        const res = await axios.get(
-          "https://www.googleapis.com/oauth2/v3/userinfo",
-          {
-            headers: { Authorization: `Bearer ${accessToken}` },
-          }
-        );
+          await loginToBackend(userInfo, login, navigate, setError);
+        } else {
+          const accessToken = tokenResponse.access_token;
+          const res = await axios.get(
+            "https://www.googleapis.com/oauth2/v3/userinfo",
+            {
+              headers: { Authorization: `Bearer ${accessToken}` },
+            }
+          );
 
-        const userInfo = {
-          user_id: res.data.email,
-          user_name: res.data.name,
-          social_type: "google",
-          access_token: accessToken,
-        };
+          const userInfo = {
+            user_id: res.data.email,
+            user_name: res.data.name,
+            social_type: "google",
+            access_token: accessToken,
+          };
 
-        await loginToBackend(userInfo, login, navigate, setError);
+          await loginToBackend(userInfo, login, navigate, setError);
+        }
+      } catch (err) {
+        console.error("구글 사용자 정보 오류", err);
+        setError("구글 로그인 실패");
       }
-    } catch (err) {
-      console.error("구글 사용자 정보 오류", err);
-      setError("구글 로그인 실패");
-    }
-  },
-  onError: () => setError("구글 로그인 실패"),
-  flow: isMobile ? "auth-code" : "implicit",
-});
-// 실제 버튼에 연결될 함수를 분리하거나, 기존 함수 내에 로그 추가
-const handleGoogleLoginClick = () => {
-  // 모바일에서 로그인 시도 직전의 정확한 URL 확인
-  console.log("Mobile client window.location.href before Google login:", window.location.href);
-  googleLogin(); // useGoogleLoginフック으로 얻은 로그인 함수 호출
-};
+    },
+    onError: () => setError("구글 로그인 실패"),
+    flow: isMobile ? "auth-code" : "implicit",
+  });
+
+  // 실제 버튼에 연결될 함수
+  const handleGoogleLoginClick = () => {
+    // 모바일에서 로그인 시도 직전의 정확한 URL 확인 (또는 다른 로직)
+    console.log("Mobile client window.location.href before Google login:", window.location.href);
+    googleLoginHook(); // useGoogleLogin 훅으로 얻은 로그인 함수 호출
+  };
 
   const kakaoLogin = () => {
     if (!window.Kakao) return setError("카카오 SDK 로드 실패");
@@ -147,7 +146,7 @@ const handleGoogleLoginClick = () => {
 
       <div className="space-y-4 w-full max-w-xs">
         <button
-          onClick={googleLogin}
+          onClick={handleGoogleLoginClick} // 수정된 부분: handleGoogleLoginClick 호출
           className="flex items-center justify-center gap-2 w-full py-2 border border-gray-300 rounded bg-white hover:bg-gray-50 shadow"
         >
           <img src="/googleimg.png" alt="Google" className="w-5 h-5" />
