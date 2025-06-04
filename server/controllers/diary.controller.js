@@ -162,8 +162,7 @@ const getAllDiariesByUser = async (req, res) => {
               ) AS file_name
          FROM ai_diary_info d
         WHERE d.user_id = ?
-        ORDER BY d.trip_date DESC
-        LIMIT 5`,
+        ORDER BY d.trip_date DESC`,
       [user_id]
     );
 
