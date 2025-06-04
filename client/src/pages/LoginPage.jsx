@@ -87,6 +87,7 @@ function LoginPageInner() {
     },
     onError: () => setError('구글 로그인 실패'),
     flow: isMobile ? 'implicit' : 'popup',
+    scope: "openid profile email",
     redirect_uri: isMobile ? 'https://tripd.netlify.app' : undefined,
   });
 
