@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import PhotoModal from '../components/PhotoModal'; // ✅ 모달 컴포넌트
+import PhotoModal from '../components/PhotoModal';
 import { FaArrowLeftLong } from "react-icons/fa6";
 
 const tagLabels = {
@@ -44,8 +44,8 @@ function GalleryFolder() {
         <h2 className="text-xl font-bold ml-12">{tagLabels[tag]}</h2>
       </div>
 
-
-      <div className="grid grid-cols-3 gap-2">
+      {/* ✅ 간격을 아주 좁게 조정 (2px) */}
+      <div className="grid grid-cols-3 gap-[2px]">
         {photos.map((photo, idx) => (
           <img
             key={idx}
@@ -61,7 +61,6 @@ function GalleryFolder() {
         ))}
       </div>
 
-      {/* ✅ 전체화면 모달 */}
       {isModalOpen && selectedPhoto && (
         <PhotoModal
           photo={selectedPhoto}

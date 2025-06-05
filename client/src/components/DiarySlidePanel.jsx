@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
   motion,
   useMotionValue,
@@ -6,10 +6,23 @@ import {
   useAnimation
 } from 'framer-motion';
 
-function DiarySlidePanel({ diary, showHandle = true }) {
+function DiarySlidePanel({ diary, showHandle = true, panelRef, panelHeight }) {
   const controls = useDragControls();
-  const y = useMotionValue(200); // ✅ 시작 위치: 일기 일부 보이게
+  const y = useMotionValue(0);
   const animationControls = useAnimation();
+  const [initialY, setInitialY] = useState(0);
+  const handleOnlyHeight = 22;
+
+  useEffect(() => {
+    const startY = panelHeight - handleOnlyHeight;
+    setInitialY(startY);
+
+    // 진입 시 툭 떨어지는 느낌 없이 고정
+    animationControls.start({
+      y: startY,
+      transition: { duration: 0 },
+    });
+  }, [panelHeight, animationControls]);
 
   const handleDragEnd = (_, info) => {
     if (info.offset.y < -100) {
@@ -19,29 +32,34 @@ function DiarySlidePanel({ diary, showHandle = true }) {
       });
     } else {
       animationControls.start({
-        y: 500,
+        y: initialY,
         transition: { type: 'spring', stiffness: 300, damping: 30 },
       });
     }
   };
 
-  useEffect(() => {
-    animationControls.start({ y: 200 }); // ✅ 초기 위치 복원
-  }, [animationControls]);
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  };
 
   return (
     <motion.div
+      ref={panelRef}
       drag="y"
-      dragConstraints={{ top: 0, bottom: 500 }}
+      dragConstraints={{ top: 0, bottom: initialY }}
       dragControls={controls}
       dragListener={false}
       onDragEnd={handleDragEnd}
       style={{ y }}
       animate={animationControls}
-      initial={{ y: 200 }}
+      initial={false}
       className="fixed bottom-0 left-0 w-full max-w-[420px] bg-white z-50"
     >
-      {/* 🔘 슬라이드 핸들 */}
       {showHandle && (
         <div
           className="w-full flex justify-center items-center py-2 cursor-pointer"
@@ -51,14 +69,20 @@ function DiarySlidePanel({ diary, showHandle = true }) {
         </div>
       )}
 
-      {/* 📘 일기 내용 */}
       {diary ? (
-        <div className="px-4 pb-6 text-sm text-gray-800 whitespace-pre-line">
-          <h3 className="text-lg font-bold mb-2">{diary.diary_title}</h3>
-          <p>{diary.diary_content}</p>
+        <div className="px-6 pb-10 text-center">
+          <h3 className="text-xl font-bold mb-1">{diary.diary_title}</h3>
+          <p className="text-sm text-gray-500 mb-4">
+            {diary.trip_date?.includes("~")
+              ? diary.trip_date
+              : formatDate(diary.trip_date)}
+          </p>
+          <div className="text-gray-800 whitespace-pre-line leading-relaxed mb-8">
+            {diary.diary_content}
+          </div>
         </div>
       ) : (
-        <div className="px-4 pb-6 text-center text-gray-500">일기 없음</div>
+        <div className="px-6 pb-10 text-center text-gray-500">일기 없음</div>
       )}
     </motion.div>
   );

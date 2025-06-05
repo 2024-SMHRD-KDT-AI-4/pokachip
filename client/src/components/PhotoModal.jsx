@@ -1,13 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import axios from 'axios';
 import DiarySlidePanel from './DiarySlidePanel';
-import {
-  HiOutlineArrowLeft,
-  HiOutlineDotsVertical,
-} from 'react-icons/hi';
+import { HiOutlineDotsVertical } from 'react-icons/hi';
 import FolderSelectModal from './FolderSelectModal';
 import { useNavigate, useParams } from 'react-router-dom';
-import { FaArrowLeftLong } from "react-icons/fa6";
+import { FaArrowLeftLong } from 'react-icons/fa6';
 
 const tagLabels = {
   people: '인물',
@@ -21,8 +18,10 @@ function PhotoModal({ photo, onClose }) {
   const [showUI, setShowUI] = useState(true);
   const [showMenu, setShowMenu] = useState(false);
   const [showFolderSelect, setShowFolderSelect] = useState(false);
+  const [panelHeight, setPanelHeight] = useState(300); // default fallback
 
-  const { tag } = useParams(); // 현재 폴더 이름
+  const panelRef = useRef(null);
+  const { tag } = useParams();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -41,15 +40,20 @@ function PhotoModal({ photo, onClose }) {
       });
   }, [photo]);
 
+  useEffect(() => {
+    if (panelRef.current) {
+      const rect = panelRef.current.getBoundingClientRect();
+      setPanelHeight(rect.height);
+    }
+  }, [diary]);
+
   const handleFolderMove = async (newTag) => {
     try {
       await axios.put(`http://localhost:5000/api/gallery/${photo.photo_idx}/move`, {
         newTag,
       });
-
-      // alert(`✅ '${tagLabels[newTag]}' 폴더로 이동했습니다.`);
-      onClose(); // 모달 닫기
-      navigate(`/gallery/${newTag}`); // 새 폴더 페이지로 이동
+      onClose();
+      navigate(`/gallery/${newTag}`);
     } catch (err) {
       console.error('❌ 폴더 이동 실패:', err);
       alert('폴더 이동에 실패했습니다.');
@@ -63,7 +67,6 @@ function PhotoModal({ photo, onClose }) {
       className="fixed inset-0 bg-black z-50 flex flex-col items-center justify-start"
       onClick={() => setShowUI(!showUI)}
     >
-      {/* 상단 네비게이션 */}
       {showUI && (
         <div className="w-full flex justify-between items-center px-4 py-3 text-white absolute top-0 z-10">
           <button
@@ -105,7 +108,6 @@ function PhotoModal({ photo, onClose }) {
         </div>
       )}
 
-      {/* 이미지 */}
       <div className="flex-1 flex items-center justify-center">
         <img
           src={`http://localhost:5000/uploads/${photo.file_name}`}
@@ -114,17 +116,20 @@ function PhotoModal({ photo, onClose }) {
         />
       </div>
 
-      {/* 일기 슬라이드 패널 */}
-      <DiarySlidePanel diary={diary} showHandle={showUI} />
+      <DiarySlidePanel
+        diary={diary}
+        showHandle={showUI}
+        panelRef={panelRef}
+        panelHeight={panelHeight}
+      />
 
-      {/* 폴더 선택 모달 */}
       {showFolderSelect && (
         <FolderSelectModal
           currentTag={tag}
           onClose={() => setShowFolderSelect(false)}
           onSelect={(newTag) => {
             setShowFolderSelect(false);
-            handleFolderMove(newTag); // 태그 변경 및 이동
+            handleFolderMove(newTag);
           }}
         />
       )}
