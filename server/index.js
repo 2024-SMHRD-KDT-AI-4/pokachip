@@ -3,11 +3,12 @@ const express = require('express');
 const cors = require('cors');
 const path = require("path");
 
-const authRouter = require('./routes/auth.route');      // 🔑 로그인 관련
-const diaryRoutes = require('./routes/diary.route');    // 📘 일기 관련
-const photoRouter = require('./routes/photoRouter');     
-const galleryRouter = require('./routes/gallery.route');    // 🗺️ 지도/사진 관련
+const authRouter = require('./routes/auth.route');         // 🔑 로그인 관련
+const diaryRoutes = require('./routes/diary.route');       // 📘 일기 관련
+const photoRouter = require('./routes/photoRouter');       
+const galleryRouter = require('./routes/gallery.route');   // 🗺️ 지도/사진 관련
 const userRouter = require('./routes/user'); 
+const timelineRouter = require('./routes/timeline.route'); // 📅 타임라인 라우터 추가 ✅
 
 const app = express();
 const PORT = 5000;
@@ -36,6 +37,7 @@ app.use('/api/diary', diaryRoutes);
 app.use('/api', authRouter);
 app.use("/", photoRouter);
 app.use('/api', galleryRouter);
+app.use('/api/timeline', timelineRouter);  // ✅ 여기에 타임라인 라우터 추가
 
 // ✅ [6] 프론트엔드 정적 파일 서빙
 app.use(express.static(path.join(__dirname, "../client/dist")));
