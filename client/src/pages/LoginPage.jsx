@@ -4,12 +4,17 @@ import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import { FaArrowLeftLong } from "react-icons/fa6";
 
-// 🔀 백엔드 로그인 요청 함수 수정: userInfo 대신 code와 social_type을 전송
+/**
+ * 백엔드에 인증 코드를 보내 로그인을 처리하는 함수
+ * @param {string} code - 소셜 플랫폼에서 받은 일회용 인증 코드
+ * @param {string} social_type - 'google' 또는 'kakao'
+ */
 const loginToBackend = async (code, social_type, login, navigate, setError) => {
   try {
+    // 백엔드의 '/api/login' 엔드포인트로 인증 코드와 소셜 타입을 전송
     const res = await axios.post(
       `${import.meta.env.VITE_API_URL}/api/login`,
-      { code, social_type }, // body 수정
+      { code, social_type },
       {
         headers: { "Content-Type": "application/json" },
       }
@@ -17,60 +22,73 @@ const loginToBackend = async (code, social_type, login, navigate, setError) => {
 
     console.log("백엔드 응답:", res.data);
 
+    // 백엔드로부터 JWT 토큰을 받으면 로그인 처리 후 메인 페이지로 이동
     if (res.data.token) {
       login(res.data.token, res.data.user);
       navigate("/");
     }
   } catch (err) {
+    // 로그인 과정에서 에러 발생 시 처리
     console.error("로그인 실패:", err);
     const msg = err.response?.data?.error || "로그인에 실패했습니다.";
-    setError(msg);
+    setError(msg); // 에러 메시지를 상태에 저장하여 유저에게 표시
   }
 };
 
-function LoginPage() { // 🔀 GoogleOAuthProvider 제거로 컴포넌트 구조 단순화
+function LoginPage() {
   const navigate = useNavigate();
   const { login } = useAuth();
   const [error, setError] = useState("");
-  const [isProcessing, setIsProcessing] = useState(false); // ✅ 중복 요청 방지 상태
+  const [isProcessing, setIsProcessing] = useState(false); // 로그인 처리 중 상태
 
-  // ✅ 리디렉션 후 콜백 처리
+  /**
+   * 소셜 로그인 후 리디렉션되었을 때 URL의 파라미터를 감지하여 로그인 절차를 시작하는 Hook
+   */
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const code = params.get("code");
-    const state = params.get("state"); // 어떤 소셜 로그인인지 구분하기 위한 state
+    const code = params.get("code"); // URL에서 'code' 파라미터 추출
+    const state = params.get("state"); // URL에서 'state' 파라미터 추출 (google/kakao 구분)
 
+    // code와 state가 모두 존재할 경우에만 로그인 로직 실행
     if (code && state) {
-      setIsProcessing(true);
-      loginToBackend(code, state, login, navigate, setError).finally(() => {
-         // URL에서 code, state 파라미터 정리
-        window.history.replaceState({}, '', window.location.pathname);
-        setIsProcessing(false);
-      });
+      setIsProcessing(true); // 처리 중임을 표시
+      loginToBackend(code, state, login, navigate, setError)
+        .finally(() => {
+          // 'invalid_grant' 오류 방지를 위해 요청 완료 후 URL의 파라미터를 정리
+          // 이 코드가 없으면 페이지 새로고침 시 동일한 코드가 재전송되어 에러 발생
+          window.history.replaceState({}, '', window.location.pathname);
+          setIsProcessing(false); // 처리 완료
+        });
     }
-  }, [login, navigate]);
+  }, [login, navigate]); // login, navigate 함수가 변경될 때만 실행
 
+  /**
+   * 에러 팝업의 확인 버튼을 눌렀을 때의 동작
+   */
   const handleErrorConfirm = () => {
     if (error.includes("회원이 아닙니다")) {
-      navigate("/register");
+      navigate("/register"); // 비회원일 경우 회원가입 페이지로 이동
     } else {
-      setError("");
+      setError(""); // 그 외의 에러는 팝업만 닫기
     }
   };
 
-  // ✅ 구글 로그인 (리디렉션 시작)
+  /**
+   * 구글 로그인 버튼 클릭 시 구글 인증 페이지로 리디렉션
+   */
   const googleLogin = () => {
     const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
     const GOOGLE_REDIRECT_URI = import.meta.env.VITE_MODE === 'production'
       ? import.meta.env.VITE_GOOGLE_REDIRECT_URI_PROD
       : import.meta.env.VITE_GOOGLE_REDIRECT_URI_DEV;
-    
-    // state 파라미터에 'google'을 담아 나중에 콜백에서 어느 소셜 로그인인지 식별
+
     const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${GOOGLE_REDIRECT_URI}&response_type=code&scope=email profile&state=google`;
     window.location.href = authUrl;
   };
 
-  // ✅ 카카오 로그인 (리디렉션 시작)
+  /**
+   * 카카오 로그인 버튼 클릭 시 카카오 인증 페이지로 리디렉션
+   */
   const kakaoLogin = () => {
     const KAKAO_CLIENT_ID = import.meta.env.VITE_KAKAO_CLIENT_ID;
     const KAKAO_REDIRECT_URI = import.meta.env.VITE_MODE === 'production'
@@ -80,8 +98,8 @@ function LoginPage() { // 🔀 GoogleOAuthProvider 제거로 컴포넌트 구조
     const authUrl = `https://kauth.kakao.com/oauth/authorize?client_id=${KAKAO_CLIENT_ID}&redirect_uri=${KAKAO_REDIRECT_URI}&response_type=code&state=kakao`;
     window.location.href = authUrl;
   };
-  
-  // 로딩 중일 때 화면
+
+  // 로그인 처리 중일 때 사용자에게 로딩 화면을 보여줌
   if (isProcessing) {
     return <div className="min-h-screen flex items-center justify-center">로그인 처리 중...</div>;
   }
