@@ -17,7 +17,7 @@ function DiarySlidePanel({ diary, showHandle = true, panelRef, panelHeight }) {
     const startY = panelHeight - handleOnlyHeight;
     setInitialY(startY);
 
-    // 진입 시 툭 떨어지는 느낌 없이 고정
+    // 초기 진입 시 바로 고정 (툭 떨어지는 애니메이션 제거)
     animationControls.start({
       y: startY,
       transition: { duration: 0 },
@@ -70,7 +70,7 @@ function DiarySlidePanel({ diary, showHandle = true, panelRef, panelHeight }) {
       )}
 
       {diary ? (
-        <div className="px-6 pb-10 text-center">
+        <div className="px-6 pb-10 text-center overflow-y-auto max-h-[calc(100vh-100px)]">
           <h3 className="text-xl font-bold mb-1">{diary.diary_title}</h3>
           <p className="text-sm text-gray-500 mb-4">
             {diary.trip_date?.includes("~")
