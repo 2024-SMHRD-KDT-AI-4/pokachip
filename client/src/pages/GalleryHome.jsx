@@ -3,13 +3,20 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 const tags = ['people', 'landscape', 'food', 'accommodation'];
-const tagLabels = {
+
+const tagTitles = {
+  people: '인물',
+  landscape: '풍경',
+  food: '음식',
+  accommodation: '숙소'
+};
+
+const tagDescriptions = {
   people: '여행의 얼굴들이 담긴 순간들',
   landscape: '눈에 담고 싶은 풍경의 조각들',
   food: '맛있는 순간들이 가득',
   accommodation: '쉼이 머물렀던 공간들'
 };
-
 
 const tagMessages = {
   people: "사람이 담긴 순간을 가장 많이 기록하셨어요.",
@@ -17,7 +24,6 @@ const tagMessages = {
   food: "음식을 가장 자주 기록하셨어요. 미식가의 여정이었네요.",
   accommodation: "머무는 공간의 분위기를 자주 남기셨어요."
 };
-
 
 function GalleryHome() {
   const navigate = useNavigate();
@@ -51,7 +57,7 @@ function GalleryHome() {
     <div className="p-4 max-w-[420px] mx-auto bg-white min-h-screen">
       <h1 className="text-center text-2xl font-semibold mb-6">GALLERY</h1>
 
-      {/* ✅ 상단 대표 카드 (간결, 얇게) */}
+      {/* ✅ 상단 대표 카드 */}
       {topTag && (
         <div
           className="flex h-28 mb-6 rounded-lg border overflow-hidden cursor-pointer shadow-sm"
@@ -59,7 +65,7 @@ function GalleryHome() {
         >
           <div className="w-3/5 bg-white px-4 py-3 flex flex-col justify-center">
             <div className="text-xs text-sky-600 font-semibold mb-1 tracking-wide">
-              {tagLabels[topTag.name]}
+              {tagDescriptions[topTag.name]}
             </div>
             <div className="text-[13px] text-gray-700 leading-snug">
               {tagMessages[topTag.name]}
@@ -110,7 +116,7 @@ function GalleryHome() {
                 </div>
               )}
               <div className="absolute bottom-0 left-0 w-full bg-black bg-opacity-50 text-white text-sm px-3 py-2">
-                <div className="font-semibold">{tagLabels[tag]}</div>
+                <div className="font-semibold">{tagTitles[tag]}</div>
                 <div>{count}장</div>
               </div>
             </div>
