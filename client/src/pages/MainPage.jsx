@@ -2,58 +2,34 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
-import DiaryList from "../components/DiaryList";
+import TimelineSection from "../components/TimelineSection";
 
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Autoplay, Pagination } from "swiper/modules"; // ✅ 자동 슬라이드 모듈 추가
+import { Autoplay, Pagination } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/pagination";
 
 function MainPage() {
   const navigate = useNavigate();
   const { isLoggedIn, token } = useAuth();
-  const [diaries, setDiaries] = useState([]);
-  const [randomDiaries, setRandomDiaries] = useState([]); // ✅ 랜덤 일기 상태 추가
+  const [randomDiaries, setRandomDiaries] = useState([]);
   const [showLoginModal, setShowLoginModal] = useState(false);
 
   useEffect(() => {
     if (isLoggedIn) {
       axios
-        .get("http://localhost:5000/api/diary", {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        .then((res) => setDiaries(res.data))
-        .catch((err) => {
-          console.error("일기 목록 불러오기 실패:", err);
-        });
-
-      // ✅ 랜덤 일기 요청
-      axios
-        .get("http://localhost:5000/api/diary/randomlist", {
+        .get("https://pokachip.onrender.com/api/diary/randomlist", {
           headers: { Authorization: `Bearer ${token}` },
         })
         .then((res) => {
           console.log("✅ 랜덤 일기 응답:", res.data);
           setRandomDiaries(res.data);
-
         })
         .catch((err) => {
           console.error("랜덤 일기 불러오기 실패:", err);
-
         });
     }
   }, [isLoggedIn]);
-
-
-  // ① 랜덤 일기 state 변화 감시
-  useEffect(() => {
-    console.log("👉 randomDiaries 변경됨:", randomDiaries);
-  }, [randomDiaries]);
-
-  // ② 전체 일기 state 변화 감시
-  useEffect(() => {
-    console.log("👉 diaries 변경됨:", diaries);
-  }, [diaries]);
 
   const exampleDiaries = [
     {
@@ -77,25 +53,22 @@ function MainPage() {
   };
 
   const renderDiaryCard = (data, idx) => {
-
     const { day, month, year } = formatDate(data.date || data.trip_date);
     const title = data.title || data.diary_title;
     const fileName = data.file_name;
     const diaryId = data.diary_idx;
 
     const image = fileName
-      ? fileName.startsWith("/") // ✅ /로 시작하면 public 이미지로 인식
+      ? fileName.startsWith("/")
         ? fileName
-        : `http://localhost:5000/uploads/${fileName}`
-      : "/default-image.jpg"; // 기본 이미지
+        : `https://pokachip.onrender.com/uploads/${fileName}`
+      : "/default-image.jpg";
 
     const handleCardClick = () => {
       if (!isLoggedIn) {
         setShowLoginModal(true);
         return;
       }
-
-
       navigate(`/diary/${diaryId}`);
     };
 
@@ -145,11 +118,7 @@ function MainPage() {
             delay: 3000,
             disableOnInteraction: false,
           }}
-
           className="w-full pb-12"
-          observer={true}
-          observeParents={true}
-          style={{ width: "100%" }}
         >
           {(isLoggedIn && randomDiaries.length > 0
             ? randomDiaries
@@ -169,52 +138,17 @@ function MainPage() {
           </div>
         )}
 
-        {isLoggedIn && diaries.length === 0 && (
-          <div className="text-center text-gray-500 px-4 py-8 space-y-6">
-            <p className="text-sm">아직 작성된 일기가 없어요 📝</p>
-            <button
-              onClick={() => navigate("/diarycreate")}
-              className="bg-blue-100 hover:bg-blue-200 text-gray-700 font-semibold px-6 py-3 rounded-full shadow-md cursor-pointer transition animate-bounce"
-            >
-             첫 여행 기록하기
-            </button>
+        {/* ✅ 타임라인 섹션 */}
+        {isLoggedIn && (
+          <div className="px-4 mt-10">
+            <h2 className="text-xl font-bold text-gray-800 mb-2">
+              📍 나의 여행 타임라인
+            </h2>
+            <TimelineSection />
           </div>
         )}
 
-        {isLoggedIn && diaries.length != 0 && (
-          <div className="px-4">
-            <div className="flex justify-center mt-6 mb-16">
-              <button
-                onClick={() => navigate("/diarycreate")}
-                className="bg-blue-100 hover:bg-blue-200 text-gray-700 font-semibold px-6 py-3 rounded-full shadow-md cursor-pointer transition"
-              >
-                새로운 여행 기록하기
-              </button>
-            </div>
-          </div>
-        )}
-
-        {isLoggedIn && diaries.length > 0 && (
-          <div className="mt-8">
-            <DiaryList
-              diaries={diaries.map((d) => {
-                const date = new Date(d.trip_date);
-                return {
-                  diary_idx: d.diary_idx,
-                  day: date.getDate(),
-                  month: date.toLocaleString("en-US", { month: "short" }).toUpperCase(),
-                  year: date.getFullYear(),
-                  title: d.diary_title,
-                  content: d.diary_content?.slice(0, 65) || '',
-                  image: d.file_name
-                    ? `http://localhost:5000/uploads/${d.file_name}`
-                    : "/default.jpg",
-                };
-              })}
-            />
-          </div>
-        )}
-
+        {/* ✅ 로그인 모달 */}
         {showLoginModal && (
           <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
             <div className="bg-white rounded-xl shadow-lg p-6 w-[320px] text-center">

@@ -14,7 +14,7 @@ import GalleryFolder from './pages/GalleryFolder';
 import MapPage from './pages/MapPage';
 import { AuthProvider } from './context/AuthContext';
 import MyPage from './pages/MyPage';
-import TimelinePage from './pages/TimelinePage';
+import DiaryListPage from './pages/DiaryListPage';
 
 // ✅ 서비스워커 등록 (PWA 기능)
 registerSW({
@@ -41,7 +41,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <Route path="/gallery/:tag" element={<GalleryFolder />} />
             <Route path="/map" element={<MapPage />} />
             <Route path="/mypage" element={<MyPage />} />
-            <Route path="/timeline" element={<TimelinePage />} />
+            <Route path="/diarylist" element={<DiaryListPage />} />
           </Route>
         </Routes>
       </BrowserRouter>
