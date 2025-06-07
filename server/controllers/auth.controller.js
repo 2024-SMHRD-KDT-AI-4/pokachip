@@ -6,6 +6,8 @@ const SECRET_KEY = process.env.JWT_SECRET || "secret123";
 exports.loginSocial = async (req, res) => {
   const { user_id, social_type, access_token, user_name } = req.body;
 
+  console.log("✅ 로그인 요청 받음, DB 조회 직전 user_id:", user_id);
+  
   if (!user_id || !social_type || !access_token) {
     return res.status(400).json({ error: "필수 정보 누락" });
   }
