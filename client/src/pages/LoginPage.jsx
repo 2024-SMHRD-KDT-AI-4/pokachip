@@ -44,8 +44,8 @@ function LoginPageInner() {
   const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
 
   const redirectUri = window.location.hostname === "localhost"
-    ? "http://localhost:5173/login"
-    : "https://tripd.netlify.app/login";
+    ? "http://localhost:5173"
+    : "https://tripd.netlify.app";
 
 
   const googleLoginHook = useGoogleLogin({ // 변수명을 googleLogin에서 googleLoginHook으로 변경 (아래 googleLogin 함수와 이름 충돌 방지)

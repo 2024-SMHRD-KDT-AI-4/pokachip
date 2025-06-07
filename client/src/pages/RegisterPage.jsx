@@ -39,8 +39,8 @@ function RegisterPageInner() {
   }, []);
 
   const redirectUri = window.location.hostname === "localhost"
-    ? "http://localhost:5173/register"
-    : "https://tripd.netlify.app/register";
+    ? "http://localhost:5173"
+    : "https://tripd.netlify.app";
 
 
   const googleLogin = useGoogleLogin({
