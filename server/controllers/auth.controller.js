@@ -1,95 +1,16 @@
 const jwt = require("jsonwebtoken");
 const db = require("../db");
-const axios = require("axios");
-
 const SECRET_KEY = process.env.JWT_SECRET || "secret123";
 
-/**
- * 헬퍼 함수: 소셜 타입, 인증 코드, 리디렉션 URI를 받아 사용자 정보를 반환
- * @param {string} social_type - 'google' 또는 'kakao'
- * @param {string} code - 일회용 인증 코드
- * @param {string} redirect_uri - 인증에 사용된 리디렉션 URI
- */
-const getUserProfile = async (social_type, code, redirect_uri) => {
-  let accessToken, userInfo;
-
-  if (social_type === "google") {
-    const tokenResponse = await axios.post(
-      "https://oauth2.googleapis.com/token",
-      {
-        code,
-        client_id: process.env.GOOGLE_CLIENT_ID,
-        client_secret: process.env.GOOGLE_CLIENT_SECRET,
-        redirect_uri, // ❗ 매개변수로 받은 URI 사용
-        grant_type: "authorization_code",
-      }
-    );
-    accessToken = tokenResponse.data.access_token;
-
-    const userResponse = await axios.get(
-      "https://www.googleapis.com/oauth2/v2/userinfo",
-      {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      }
-    );
-    userInfo = {
-      user_id: userResponse.data.email,
-      user_name: userResponse.data.name,
-      social_type,
-    };
-  } else if (social_type === "kakao") {
-    const tokenResponse = await axios.post(
-      "https://kauth.kakao.com/oauth/token",
-      null,
-      {
-        params: {
-          grant_type: "authorization_code",
-          client_id: process.env.KAKAO_CLIENT_ID,
-          redirect_uri, // ❗ 매개변수로 받은 URI 사용
-          code,
-        },
-      }
-    );
-    accessToken = tokenResponse.data.access_token;
-
-    const userResponse = await axios.get("https://kapi.kakao.com/v2/user/me", {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-    userInfo = {
-      user_id: userResponse.data.kakao_account.email,
-      user_name: userResponse.data.properties.nickname,
-      social_type,
-    };
-  } else {
-    throw new Error("Unsupported social type");
-  }
-
-  return userInfo;
-};
-
-// ✅ 소셜 로그인 (리디렉션 방식)
+// ✅ 소셜 로그인
 exports.loginSocial = async (req, res) => {
-  const { social_type, code } = req.body;
+  const { user_id, social_type, access_token, user_name } = req.body;
 
-  if (!social_type || !code) {
+  if (!user_id || !social_type || !access_token) {
     return res.status(400).json({ error: "필수 정보 누락" });
   }
 
   try {
-    // ❗ 로그인용 리디렉션 URI를 선택
-    const redirect_uri =
-      process.env.NODE_ENV === "production"
-        ? social_type === "google"
-          ? process.env.GOOGLE_REDIRECT_URI_PROD
-          : process.env.KAKAO_REDIRECT_URI_PROD
-        : social_type === "google"
-        ? process.env.GOOGLE_REDIRECT_URI_DEV
-        : process.env.KAKAO_REDIRECT_URI_DEV;
-    
-    // ❗ 선택된 URI를 getUserProfile 함수에 전달
-    const userProfile = await getUserProfile(social_type, code, redirect_uri);
-    const { user_id } = userProfile;
-
     const [rows] = await db.query("SELECT * FROM user_info WHERE user_id = ?", [
       user_id,
     ]);
@@ -114,34 +35,27 @@ exports.loginSocial = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("소셜 로그인 오류:", err.response ? err.response.data : err.message);
-    res.status(500).json({ error: "서버 오류", details: err.response ? err.response.data : null });
+    console.error("로그인 오류:", err);
+    res.status(500).json({ error: "서버 오류" });
   }
 };
 
-// ✅ 소셜 회원가입 (리디렉션 방식)
+// ✅ 소셜 회원가입
 exports.registerSocial = async (req, res) => {
-  const { social_type, code } = req.body;
+  const { user_id, user_name, social_type, access_token } = req.body;
 
-  if (!social_type || !code) {
+  console.log("🔐 회원가입 요청값:", {
+    user_id,
+    user_name,
+    social_type,
+    access_token,
+  });
+
+  if (!user_id || !user_name || !social_type || !access_token) {
     return res.status(400).json({ error: "필수 정보 누락" });
   }
 
   try {
-    // ❗ 회원가입용 리디렉션 URI를 선택
-    const redirect_uri =
-      process.env.NODE_ENV === "production"
-        ? social_type === "google"
-          ? process.env.GOOGLE_REDIRECT_URI_PROD_REGISTER
-          : process.env.KAKAO_REDIRECT_URI_PROD_REGISTER
-        : social_type === "google"
-        ? process.env.GOOGLE_REDIRECT_URI_DEV_REGISTER
-        : process.env.KAKAO_REDIRECT_URI_DEV_REGISTER;
-
-    // ❗ 선택된 URI를 getUserProfile 함수에 전달
-    const userProfile = await getUserProfile(social_type, code, redirect_uri);
-    const { user_id, user_name } = userProfile;
-
     const [rows] = await db.query("SELECT * FROM user_info WHERE user_id = ?", [
       user_id,
     ]);
@@ -150,13 +64,80 @@ exports.registerSocial = async (req, res) => {
     }
 
     await db.query(
-      "INSERT INTO user_info (user_id, user_name, social_type) VALUES (?, ?, ?)",
-      [user_id, user_name, social_type]
+      "INSERT INTO user_info (user_id, user_name, social_type, access_token) VALUES (?, ?, ?, ?)",
+      [user_id, user_name, social_type, access_token]
     );
 
     res.json({ message: "회원가입 되었습니다" });
   } catch (err) {
-    console.error("회원가입 오류:", err.response ? err.response.data : err.message);
-    res.status(500).json({ error: "서버 오류", details: err.response ? err.response.data : null });
+    console.error("회원가입 오류:", err);
+    res.status(500).json({ error: "서버 오류" });
+  }
+};
+
+// ✅ 모바일용 구글 로그인 code → access_token → userinfo
+exports.exchangeGoogleCode = async (req, res) => {
+  const { code } = req.body;
+
+  const redirect_uri =
+    process.env.NODE_ENV === "development"
+      ? "http://localhost:5173/login"
+      : "https://tripd.netlify.app/login";
+
+  console.log("✅ 최종 redirect_uri:", redirect_uri);
+
+  if (!code || !redirect_uri) {
+    return res.status(400).json({ error: "code 또는 redirect_uri 누락" });
+  }
+
+  try {
+    const params = new URLSearchParams();
+    params.append("code", code);
+    params.append("client_id", process.env.GOOGLE_CLIENT_ID);
+    params.append("client_secret", process.env.GOOGLE_CLIENT_SECRET);
+    params.append("redirect_uri", redirect_uri);
+    params.append("grant_type", "authorization_code");
+
+    console.log("🔑 구글 토큰 요청 시작");
+    console.log("📦 code:", code);
+    console.log("📦 redirect_uri:", redirect_uri);
+
+    const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: params.toString(),
+    });
+
+    // ✅ 추가된 디버깅 코드
+    if (!tokenRes.ok) {
+      const errMsg = await tokenRes.text();
+      console.error("❌ 토큰 요청 실패:", tokenRes.status, errMsg);
+      return res.status(401).json({ error: "토큰 요청 실패", detail: errMsg });
+    }
+
+    const tokenData = await tokenRes.json();
+
+    if (!tokenData.access_token) {
+      return res.status(401).json({ error: "구글 access_token 발급 실패" });
+    }
+
+    const userInfoRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+      headers: { Authorization: `Bearer ${tokenData.access_token}` },
+    });
+
+    const userInfo = await userInfoRes.json();
+
+    if (!userInfo.email || !userInfo.name) {
+      return res.status(401).json({ error: "사용자 정보 가져오기 실패" });
+    }
+
+    res.json({
+      user_id: userInfo.email,
+      user_name: userInfo.name,
+      access_token: tokenData.access_token,
+    });
+  } catch (err) {
+    console.error("구글 토큰 교환 실패:", err);
+    res.status(500).json({ error: "Google 로그인 처리 중 오류 발생" });
   }
 };
