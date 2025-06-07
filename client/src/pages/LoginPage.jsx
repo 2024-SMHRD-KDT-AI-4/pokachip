@@ -43,16 +43,24 @@ function LoginPageInner() {
 
   const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
 
+  const redirectUri = window.location.hostname === "localhost"
+    ? "http://localhost:5173/login"
+    : "https://tripd.netlify.app/login";
+
+
   const googleLoginHook = useGoogleLogin({ // 변수명을 googleLogin에서 googleLoginHook으로 변경 (아래 googleLogin 함수와 이름 충돌 방지)
     onSuccess: async (tokenResponse) => {
       try {
         if (isMobile) {
+          // 💥 수정: 백엔드에 code와 함께 redirectUri를 전달합니다.
           const res = await axios.post(
             `${import.meta.env.VITE_API_URL}/api/google-token`,
             {
               code: tokenResponse.code,
+              redirect_uri: redirectUri,
             }
           );
+
 
           const { user_id, user_name, access_token } = res.data;
 

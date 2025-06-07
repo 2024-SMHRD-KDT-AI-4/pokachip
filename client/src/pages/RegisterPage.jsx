@@ -38,16 +38,19 @@ function RegisterPageInner() {
     initKakao();
   }, []);
 
+  const redirectUri = window.location.hostname === "localhost"
+    ? "http://localhost:5173/register"
+    : "https://tripd.netlify.app/register";
+
+
   const googleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       try {
         if (isMobile) {
+          // 💥 수정: 백엔드에 code와 함께 올바른 redirectUri를 전달합니다.
           const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/google-token`, {
             code: tokenResponse.code,
-            redirect_uri:
-              window.location.hostname === "localhost"
-                ? "http://localhost:5173/login"
-                : "https://tripd.netlify.app/login",
+            redirect_uri: redirectUri, 
           });
 
           const { user_id, user_name, access_token } = res.data;
@@ -84,8 +87,8 @@ function RegisterPageInner() {
     flow: isMobile ? "auth-code" : "implicit",
     ...(isMobile && {
       redirect_uri: window.location.hostname === "localhost"
-        ? "http://localhost:5173/login"
-        : "https://tripd.netlify.app/login"
+        ? "http://localhost:5173/register"
+        : "https://tripd.netlify.app/register"
     }),
   });
 

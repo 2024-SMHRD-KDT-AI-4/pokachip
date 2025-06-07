@@ -77,15 +77,10 @@ exports.registerSocial = async (req, res) => {
 
 // ✅ 모바일용 구글 로그인 code → access_token → userinfo
 exports.exchangeGoogleCode = async (req, res) => {
-  const { code } = req.body;
+  // 💥 수정: req.body에서 redirect_uri를 받습니다.
+  const { code, redirect_uri } = req.body;
 
-  const redirect_uri =
-    process.env.NODE_ENV === "development"
-      ? "http://localhost:5173/login"
-      : "https://tripd.netlify.app/login";
-
-  console.log("✅ 최종 redirect_uri:", redirect_uri);
-
+  // 💥 수정: 전달받은 redirect_uri를 사용하도록 변경합니다.
   if (!code || !redirect_uri) {
     return res.status(400).json({ error: "code 또는 redirect_uri 누락" });
   }
@@ -95,12 +90,13 @@ exports.exchangeGoogleCode = async (req, res) => {
     params.append("code", code);
     params.append("client_id", process.env.GOOGLE_CLIENT_ID);
     params.append("client_secret", process.env.GOOGLE_CLIENT_SECRET);
+    // 💥 수정: 전달받은 redirect_uri를 파라미터에 추가합니다.
     params.append("redirect_uri", redirect_uri);
     params.append("grant_type", "authorization_code");
 
     console.log("🔑 구글 토큰 요청 시작");
     console.log("📦 code:", code);
-    console.log("📦 redirect_uri:", redirect_uri);
+    console.log("📦 redirect_uri:", redirect_uri); // 로그 추가
 
     const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
@@ -108,7 +104,6 @@ exports.exchangeGoogleCode = async (req, res) => {
       body: params.toString(),
     });
 
-    // ✅ 추가된 디버깅 코드
     if (!tokenRes.ok) {
       const errMsg = await tokenRes.text();
       console.error("❌ 토큰 요청 실패:", tokenRes.status, errMsg);
