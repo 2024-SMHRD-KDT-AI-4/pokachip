@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
@@ -13,6 +13,42 @@ function DiaryCreate() {
   const [weather, setWeather] = useState('');
   const [showOptions, setShowOptions] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  const [loadingText, setLoadingText] = useState('');
+  const fullText = '일기를 생성 중입니다...';
+  const [charIndex, setCharIndex] = useState(0);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+
+
+  useEffect(() => {
+    if (!isLoading) return;
+
+    const typingDelay = 120;
+    const erasingDelay = 70;
+    const pauseTime = 1000;
+
+    const timer = setTimeout(() => {
+      if (!isDeleting) {
+        if (charIndex < fullText.length) {
+          setLoadingText(prev => prev + fullText[charIndex]);
+          setCharIndex(prev => prev + 1);
+        } else {
+          setIsDeleting(true);
+        }
+      } else {
+        if (charIndex > 0) {
+          setLoadingText(prev => prev.slice(0, -1));
+          setCharIndex(prev => prev - 1);
+        } else {
+          setIsDeleting(false);
+        }
+      }
+    }, isDeleting ? erasingDelay : typingDelay);
+
+    return () => clearTimeout(timer);
+  }, [isLoading, charIndex, isDeleting]);
+
 
   const userData = localStorage.getItem('user');
   let userEmail = null;
@@ -228,7 +264,10 @@ function DiaryCreate() {
               alt="Loading..."
               className="w-16 h-16 mb-4 animate-logo-bounce"
             />
-            <p className="text-gray-700 text-lg font-semibold">일기를 생성 중입니다...</p>
+            <p className="text-gray-700 text-lg font-semibold whitespace-pre relative">
+              <span className="invisible">{fullText}</span>
+              <span className="absolute left-0 top-0">{loadingText}</span>
+            </p>
           </div>
         </div>
       )}

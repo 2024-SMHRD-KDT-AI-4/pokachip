@@ -15,7 +15,7 @@ function App() {
   const location = useLocation();
 
   // ✅ 헤더/푸터가 필요한 경로 목록 정의
-  const withLayoutRoutes = ["/", "/main", "/map", "/mypage", "/gallery"];
+  const withLayoutRoutes = ["/", "/main", "/map", "/mypage", "/gallery", "/diarylist"];
   // 현재 경로가 위 목록에 포함되어 있는지 확인
   const isWithLayout = withLayoutRoutes.includes(location.pathname);
 
