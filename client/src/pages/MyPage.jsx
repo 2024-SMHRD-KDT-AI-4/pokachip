@@ -11,16 +11,22 @@ function MyPage() {
     const [successMessage, setSuccessMessage] = useState('');
     const [showSuccessModal, setShowSuccessModal] = useState(false);
 
+
+    const baseURL =
+        import.meta.env.MODE === "development"
+            ? import.meta.env.VITE_API_LOCAL
+            : import.meta.env.VITE_API_DEPLOY;
+            
     useEffect(() => {
         const token = localStorage.getItem('token');
         if (!token) return;
 
-        axios.get('http://localhost:5000/api/user/me', {
+        axios.get(`${baseURL}/api/user/me`, {
             headers: { Authorization: `Bearer ${token}` }
         })
             .then(res => {
                 setUser(res.data);
-                return axios.get('http://localhost:5000/api/user/stats', {
+                return axios.get(`${baseURL}/api/user/stats`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
             })
@@ -50,7 +56,7 @@ function MyPage() {
     const confirmDelete = async () => {
         const token = localStorage.getItem('token');
         try {
-            await axios.delete(`http://localhost:5000/api/user`, {
+            await axios.delete(`${baseURL}/api/user`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 

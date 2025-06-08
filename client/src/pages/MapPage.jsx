@@ -32,11 +32,16 @@ export default function MapPage() {
   const [photos, setPhotos] = useState([]);
   const navigate = useNavigate();
 
+  const baseURL =
+  import.meta.env.MODE === "development"
+    ? import.meta.env.VITE_API_LOCAL
+    : import.meta.env.VITE_API_DEPLOY;
+
   // 1) 로그인된 유저 사진 불러오기
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return;
-    fetch("http://localhost:5000/userPhotos", {
+    fetch(`${baseURL}/userPhotos`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(res => res.json())
@@ -128,7 +133,7 @@ export default function MapPage() {
               content: `
                 <div style="text-align:center; max-width:220px;">
                   <img
-                    src="http://localhost:5000${photo.filePath}"
+                    src="${baseURL}${photo.filePath}"
                     data-diary-id="${photo.diary?.diary_idx}"
                     style="width:100%; cursor:pointer; border-radius:8px;"
                     alt="photo"
