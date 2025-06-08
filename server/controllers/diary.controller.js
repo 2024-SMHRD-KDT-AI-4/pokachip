@@ -1,3 +1,4 @@
+// server/controllers/diary.controller.js
 require("dotenv").config();
 const axios = require("axios");
 const pool = require("../db");
@@ -15,10 +16,8 @@ const generateDiaryFromImage = async (req, res) => {
   }
 
   try {
-    // ✅ EXIF + 위치 + GPT 이미지용 base64 추출
     const { dateList, gpsList, locationList, imageMessages } = await extractExifData(imageFiles);
 
-    // ✅ 날짜 계산
     let tripDateStr, tripDateDB;
     if (dateList.length > 0) {
       dateList.sort((a, b) => a - b);
@@ -32,15 +31,12 @@ const generateDiaryFromImage = async (req, res) => {
     }
 
     const locationInfo = locationList.length > 0 ? locationList.join(", ") : "";
-
-    // ✅ GPT 프롬프트 생성 + 호출
     const promptText = buildPrompt({ companion, feeling, length, tone, weather }, locationInfo, tripDateStr);
     const diary = await callGPT(promptText, imageMessages);
 
     const diaryTitle = diary.title;
     const diaryContent = diary.content;
 
-    // ✅ DB 저장 시작
     const conn = await pool.getConnection();
     await conn.beginTransaction();
 
@@ -53,13 +49,13 @@ const generateDiaryFromImage = async (req, res) => {
 
     for (let i = 0; i < imageFiles.length; i++) {
       const file = imageFiles[i];
-      const { lat, lng } = gpsList[i];
+      const { lat, lng, taken_at } = gpsList[i];
+      const takenAtToInsert = taken_at || new Date();
 
       const [pRes] = await conn.query(
-        `INSERT INTO photo_info 
-           (user_id, file_name, exif_loc, taken_at, tags, lat, lng)
-         VALUES (?, ?, ?, NOW(), '', ?, ?)`,
-        [user_id, file.filename, locationInfo, lat, lng]
+        `INSERT INTO photo_info (user_id, file_name, exif_loc, taken_at, tags, lat, lng)
+         VALUES (?, ?, ?, ?, '', ?, ?)`,
+        [user_id, file.filename, locationInfo, takenAtToInsert, lat, lng]
       );
 
       const photo_idx = pRes.insertId;
@@ -74,7 +70,6 @@ const generateDiaryFromImage = async (req, res) => {
     await conn.commit();
     conn.release();
 
-    // ✅ Flask 태그 분류 요청
     try {
       await axios.post("http://localhost:6006/classify");
       console.log("✔️ Flask 서버로 분류 요청 전송 완료");
@@ -82,35 +77,26 @@ const generateDiaryFromImage = async (req, res) => {
       console.warn("❌ Flask 호출 실패:", err.message);
     }
 
-    return res.json({
-      message: "일기 저장 완료",
-      diary_idx,
-      trip_date: tripDateStr,
-    });
+    return res.json({ message: "일기 저장 완료", diary_idx, trip_date: tripDateStr });
   } catch (error) {
     console.error("일기 생성 실패:", error.response?.data || error.message);
     return res.status(500).json({ error: "일기 생성 실패" });
   }
 };
 
-// ✅ 일기 ID로 조회
 const getDiaryById = async (req, res) => {
   const diaryId = req.params.id;
   try {
-    const [diaries] = await pool.query(
-      "SELECT * FROM ai_diary_info WHERE diary_idx = ?",
-      [diaryId]
-    );
-    if (diaries.length === 0) {
-      return res.status(404).json({ error: "일기를 찾을 수 없습니다." });
-    }
+    const [diaries] = await pool.query("SELECT * FROM ai_diary_info WHERE diary_idx = ?", [diaryId]);
+    if (diaries.length === 0) return res.status(404).json({ error: "일기를 찾을 수 없습니다." });
     const diary = diaries[0];
 
     const [photos] = await pool.query(
-      `SELECT p.photo_idx, p.file_name, p.lat, p.lng, p.taken_at
-         FROM ai_diary_photos ap 
-         JOIN photo_info p ON ap.photo_idx = p.photo_idx
-        WHERE ap.diary_idx = ?`,
+      `SELECT p.photo_idx, p.file_name, p.lat, p.lng, p.taken_at, d.diary_title
+       FROM ai_diary_photos ap
+       JOIN photo_info p ON ap.photo_idx = p.photo_idx
+       JOIN ai_diary_info d ON ap.diary_idx = d.diary_idx
+       WHERE ap.diary_idx = ?`,
       [diaryId]
     );
 
@@ -121,21 +107,18 @@ const getDiaryById = async (req, res) => {
   }
 };
 
-// ✅ 사진으로 일기 조회
 const getDiaryByPhotoIdx = async (req, res) => {
   const user_id = req.user.user_id;
   const photoIdx = req.params.photoIdx;
   try {
     const [rows] = await pool.query(
       `SELECT d.diary_idx, d.diary_title, d.diary_content, d.trip_date
-         FROM ai_diary_photos ap
-         JOIN ai_diary_info d ON ap.diary_idx = d.diary_idx
-        WHERE ap.photo_idx = ? AND d.user_id = ?`,
+       FROM ai_diary_photos ap
+       JOIN ai_diary_info d ON ap.diary_idx = d.diary_idx
+       WHERE ap.photo_idx = ? AND d.user_id = ?`,
       [photoIdx, user_id]
     );
-    if (rows.length === 0) {
-      return res.status(404).json({ message: "해당 사진의 일기가 없습니다." });
-    }
+    if (rows.length === 0) return res.status(404).json({ message: "해당 사진의 일기가 없습니다." });
     return res.json(rows[0]);
   } catch (err) {
     console.error("사진별 일기 조회 실패:", err);
@@ -143,33 +126,16 @@ const getDiaryByPhotoIdx = async (req, res) => {
   }
 };
 
-// ✅ 사용자 전체 일기 목록 조회
 const getAllDiariesByUser = async (req, res) => {
   const user_id = req.user.user_id;
   try {
     const [rows] = await pool.query(
-      `SELECT d.diary_idx,
-              d.diary_title,
-              d.diary_content,
-              d.trip_date,
-              (
-                SELECT p.file_name
-                  FROM ai_diary_photos dp
-                  JOIN photo_info p ON dp.photo_idx = p.photo_idx
-                 WHERE dp.diary_idx = d.diary_idx
-                 ORDER BY dp.created_at ASC
-                 LIMIT 1
-              ) AS file_name
-         FROM ai_diary_info d
-        WHERE d.user_id = ?
-        ORDER BY d.trip_date DESC`,
+      `SELECT d.diary_idx, d.diary_title, d.diary_content, d.trip_date,
+              (SELECT p.file_name FROM ai_diary_photos dp LEFT JOIN photo_info p ON dp.photo_idx = p.photo_idx WHERE dp.diary_idx = d.diary_idx ORDER BY dp.created_at ASC LIMIT 1) AS file_name
+       FROM ai_diary_info d WHERE d.user_id = ? ORDER BY d.trip_date DESC`,
       [user_id]
     );
-
-    if (rows.length === 0) {
-      return res.status(404).json({ message: "등록된 일기가 없습니다." });
-    }
-
+    if (rows.length === 0) return res.status(404).json({ message: "등록된 일기가 없습니다." });
     return res.json(rows);
   } catch (err) {
     console.error("사용자 일기 목록 조회 실패:", err);
@@ -177,32 +143,16 @@ const getAllDiariesByUser = async (req, res) => {
   }
 };
 
-// ✅ 랜덤 일기 3개
 const getRandomDiariesByUser = async (req, res) => {
   const user_id = req.user?.user_id;
-  if (!user_id) {
-    console.warn("❌ user_id가 없음. 인증 실패 처리.");
-    return res.status(401).json({ message: "사용자 인증 실패" });
-  }
-
+  if (!user_id) return res.status(401).json({ message: "사용자 인증 실패" });
   try {
     const [rows] = await pool.query(
       `SELECT d.diary_idx, d.diary_title, d.diary_content, d.trip_date,
-              (
-                SELECT p.file_name
-                FROM ai_diary_photos dp
-                LEFT JOIN photo_info p ON dp.photo_idx = p.photo_idx
-                WHERE dp.diary_idx = d.diary_idx
-                ORDER BY dp.created_at ASC
-                LIMIT 1
-              ) AS file_name
-       FROM ai_diary_info d
-      WHERE d.user_id = ?
-      ORDER BY RAND()
-      LIMIT 3`,
+              (SELECT p.file_name FROM ai_diary_photos dp LEFT JOIN photo_info p ON dp.photo_idx = p.photo_idx WHERE dp.diary_idx = d.diary_idx ORDER BY dp.created_at ASC LIMIT 1) AS file_name
+       FROM ai_diary_info d WHERE d.user_id = ? ORDER BY RAND() LIMIT 3`,
       [user_id]
     );
-
     return res.json(rows);
   } catch (err) {
     console.error("❌ 랜덤 일기 조회 실패:", err);
@@ -210,38 +160,22 @@ const getRandomDiariesByUser = async (req, res) => {
   }
 };
 
-// ✅ 일기 삭제
 const deleteDiary = async (req, res) => {
   const diaryId = req.params.id;
   const user_id = req.user?.user_id || req.body.user_id;
-
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
-
     const [photoRows] = await conn.query(
-      `SELECT p.photo_idx
-       FROM ai_diary_photos ap
-       JOIN photo_info p ON ap.photo_idx = p.photo_idx
-       WHERE ap.diary_idx = ? AND p.user_id = ?`,
+      `SELECT p.photo_idx FROM ai_diary_photos ap JOIN photo_info p ON ap.photo_idx = p.photo_idx WHERE ap.diary_idx = ? AND p.user_id = ?`,
       [diaryId, user_id]
     );
     const photoIdxList = photoRows.map(row => row.photo_idx);
-
     await conn.query(`DELETE FROM ai_diary_photos WHERE diary_idx = ?`, [diaryId]);
-
     if (photoIdxList.length > 0) {
-      await conn.query(
-        `DELETE FROM photo_info WHERE photo_idx IN (?) AND user_id = ?`,
-        [photoIdxList, user_id]
-      );
+      await conn.query(`DELETE FROM photo_info WHERE photo_idx IN (?) AND user_id = ?`, [photoIdxList, user_id]);
     }
-
-    await conn.query(
-      `DELETE FROM ai_diary_info WHERE diary_idx = ? AND user_id = ?`,
-      [diaryId, user_id]
-    );
-
+    await conn.query(`DELETE FROM ai_diary_info WHERE diary_idx = ? AND user_id = ?`, [diaryId, user_id]);
     await conn.commit();
     res.json({ message: "일기 삭제 성공" });
   } catch (err) {
@@ -253,6 +187,42 @@ const deleteDiary = async (req, res) => {
   }
 };
 
+const getTimelineByUser = async (req, res) => {
+  const user_email = req.query.user_email;
+  if (!user_email) {
+    return res.status(400).json({ error: "user_email이 필요합니다" });
+  }
+
+  try {
+    const [photos] = await pool.query(
+      `SELECT p.photo_idx, p.file_name, p.taken_at, p.tags, d.diary_title
+       FROM photo_info p
+       JOIN ai_diary_photos dp ON p.photo_idx = dp.photo_idx
+       JOIN ai_diary_info d ON dp.diary_idx = d.diary_idx
+       WHERE p.user_id = ?
+       ORDER BY p.taken_at ASC`,
+      [user_email]
+    );
+
+    const timeline = {};
+    photos.forEach(photo => {
+      const date = photo.taken_at.toISOString().slice(0, 10);
+      if (!timeline[date]) timeline[date] = [];
+      timeline[date].push(photo);
+    });
+
+    const result = Object.entries(timeline).map(([date, photos]) => ({
+      title: date,
+      photos,
+    }));
+
+    res.json(result);
+  } catch (err) {
+    console.error("타임라인 조회 실패:", err);
+    res.status(500).json({ error: "타임라인 조회 실패" });
+  }
+};
+
 module.exports = {
   generateDiaryFromImage,
   getDiaryById,
@@ -260,4 +230,5 @@ module.exports = {
   getAllDiariesByUser,
   getRandomDiariesByUser,
   deleteDiary,
+  getTimelineByUser
 };

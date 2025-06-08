@@ -7,31 +7,21 @@ export default function TimelineItem({ title, photos }) {
     const [modalImage, setModalImage] = useState(null);
 
     return (
-        <div className="mb-6 ml-4">
-            {/* 타이틀 + 로고마커 */}
+        <div className="mb-20 ml-4"> {/* ✅ 마지막 사진과 푸터 사이 여유 공간 추가 */}
+           <img
+  src="/logomarker.png"
+  alt="Logo Marker"
+  className="w-5 h-5 mr-2 object-contain"
+/>
+
             <div className="flex items-center cursor-pointer mb-2" onClick={() => setShowPhotos(!showPhotos)}>
-                {/* 🔁 로고 마커로 교체 */}
-                <img
-                    src="/logomarker.png"
-                    alt="Logo Marker"
-                    className="w-5 h-5 mr-2 object-contain"
-                />
                 <h2 className="text-lg font-semibold">{title}</h2>
             </div>
 
-            {/* ✅ 세로선 삭제됨 */}
-
             {showPhotos && (
-                <div className="ml-4 pl-4 flex flex-col gap-6"> {/* border-l 제거됨 */}
+                <div className="ml-4 pl-4 flex flex-col gap-6">
                     {photos.map((photo, index) => (
                         <div key={index} className="flex flex-col items-center relative">
-                            {/* ✅ 태그 마커 */}
-                            <img
-                                src={`/${photo.tags || 'people'}.png`}
-                                alt={photo.tags}
-                                className="w-10 h-10 absolute -left-9 top-1/2 -translate-y-1/2"
-                            />
-
                             {/* ✅ 썸네일 */}
                             <img
                                 src={`http://localhost:5000/uploads/${photo.file_name}`}
@@ -43,6 +33,11 @@ export default function TimelineItem({ title, photos }) {
                             {/* ✅ 날짜 + 시간 */}
                             <div className="text-xs text-gray-500 mt-1 text-center">
                                 {dayjs(photo.taken_at).format('YYYY.MM.DD HH:mm')}
+                            </div>
+
+                            {/* ✅ 일기 제목 (작은 글씨로 날짜 아래에) */}
+                            <div className="text-xs text-gray-700 text-center">
+                                {photo.diary_title || ''}
                             </div>
                         </div>
                     ))}

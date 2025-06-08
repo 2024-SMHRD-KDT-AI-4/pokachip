@@ -18,7 +18,7 @@ function MainPage() {
     useEffect(() => {
         if (isLoggedIn) {
             axios
-                .get("https://pokachip.onrender.com/api/diary/randomlist", {
+                .get("http://localhost:5000/api/diary/randomlist", {
                     headers: { Authorization: `Bearer ${token}` },
                 })
                 .then((res) => {
@@ -61,7 +61,7 @@ function MainPage() {
         const image = fileName
             ? fileName.startsWith("/")
                 ? fileName
-                : `https://pokachip.onrender.com/uploads/${fileName}`
+                : `http://localhost:5000/uploads/${fileName}`
             : "/default-image.jpg";
 
         const handleCardClick = () => {
@@ -143,8 +143,7 @@ function MainPage() {
                     <div className="px-4 mt-10">
                         {/* ✅ mb-2를 mb-8로 변경하여 간격 확대 */}
                         <h2 className="text-xl font-bold text-gray-800 mb-8 flex items-center">
-                            <img src="/pin.png" alt="pin" className="w-6 h-6 mr-2" /> {/* 핀 이미지 추가 */}
-                            나의 여행 타임라인
+                            Trip Timeline
                         </h2>
                         <TimelineSection />
                     </div>

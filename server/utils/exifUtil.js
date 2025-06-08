@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const axios = require("axios");
 const ExifParser = require("exif-parser");
+const dayjs = require("dayjs");
 require("dotenv").config();
 
 // ✅ 위도·경도로 장소명 변환 (Google Maps API)
@@ -31,14 +32,17 @@ const extractExifData = async (imageFiles) => {
 
     let lat = null;
     let lng = null;
+    let taken_at = null;
 
     try {
       const parser = ExifParser.create(imageBuffer);
       const result = parser.parse();
 
-      // ✅ 날짜 추출
+      // ✅ 날짜 추출 → MySQL 형식으로 taken_at 저장
       if (result.tags.DateTimeOriginal) {
-        dateList.push(new Date(result.tags.DateTimeOriginal * 1000));
+        const timestamp = result.tags.DateTimeOriginal; // EXIF는 초 단위
+        taken_at = dayjs.unix(timestamp).format("YYYY-MM-DD HH:mm:ss");
+        dateList.push(new Date(taken_at));
       }
 
       // ✅ GPS 추출
@@ -47,8 +51,8 @@ const extractExifData = async (imageFiles) => {
         lng = parseFloat(result.tags.GPSLongitude);
       }
 
-      // ✅ DB용 GPS 정보 push
-      gpsList.push({ lat, lng });
+      // ✅ DB용 GPS 정보 push (이제 taken_at 포함!)
+      gpsList.push({ lat, lng, taken_at });
 
       // ✅ GPT 프롬프트용 위치정보 (주소 변환)
       if (lat && lng) {
@@ -57,7 +61,7 @@ const extractExifData = async (imageFiles) => {
       }
     } catch (err) {
       console.warn("📸 EXIF 파싱 실패:", err.message);
-      gpsList.push({ lat: null, lng: null });
+      gpsList.push({ lat: null, lng: null, taken_at: null });
     }
 
     // ✅ GPT 이미지 분석용 base64

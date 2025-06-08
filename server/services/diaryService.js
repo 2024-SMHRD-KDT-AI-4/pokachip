@@ -52,10 +52,11 @@ async function fetchDiaryById(diaryId) {
     if (diaries.length === 0) throw new Error("일기 없음");
 
     const [photos] = await conn.query(
-        `SELECT p.photo_idx, p.file_name, p.lat, p.lng, p.taken_at, p.tags
-        FROM ai_diary_photos ap
-        JOIN photo_info p ON ap.photo_idx = p.photo_idx
-        WHERE ap.diary_idx = ?`,
+        `SELECT p.photo_idx, p.file_name, p.lat, p.lng, p.taken_at, p.tags, d.diary_title
+   FROM ai_diary_photos ap
+   JOIN photo_info p ON ap.photo_idx = p.photo_idx
+   JOIN ai_diary_info d ON ap.diary_idx = d.diary_idx
+   WHERE ap.diary_idx = ?`,
         [diaryId]
     );
 
