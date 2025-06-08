@@ -24,11 +24,16 @@ function PhotoModal({ photo, onClose }) {
   const { tag } = useParams();
   const navigate = useNavigate();
 
+  const baseURL =
+  import.meta.env.MODE === "development"
+    ? import.meta.env.VITE_API_LOCAL
+    : import.meta.env.VITE_API_DEPLOY;
+
   useEffect(() => {
     if (!photo?.photo_idx) return;
 
     axios
-      .get(`http://localhost:5000/api/diary/photo/${photo.photo_idx}`, {
+      .get(`${baseURL}/api/diary/photo/${photo.photo_idx}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
@@ -49,7 +54,7 @@ function PhotoModal({ photo, onClose }) {
 
   const handleFolderMove = async (newTag) => {
     try {
-      await axios.put(`http://localhost:5000/api/gallery/${photo.photo_idx}/move`, {
+      await axios.put(`${baseURL}/api/gallery/${photo.photo_idx}/move`, {
         newTag,
       });
       onClose();
@@ -110,7 +115,7 @@ function PhotoModal({ photo, onClose }) {
 
       <div className="flex-1 flex items-center justify-center">
         <img
-          src={`http://localhost:5000/uploads/${photo.file_name}`}
+          src={`${baseURL}/uploads/${photo.file_name}`}
           alt="fullscreen"
           className="max-w-full max-h-full object-contain"
         />

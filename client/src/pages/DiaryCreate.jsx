@@ -24,6 +24,11 @@ function DiaryCreate() {
       console.error('❌ 로그인 정보 파싱 실패:', e);
     }
   }
+  const baseURL =
+    import.meta.env.MODE === "development"
+      ? import.meta.env.VITE_API_LOCAL
+      : import.meta.env.VITE_API_DEPLOY;
+
 
   const handleFileChange = (e) => {
     const files = Array.from(e.target.files).slice(0, 5);
@@ -49,7 +54,7 @@ function DiaryCreate() {
     try {
       const token = localStorage.getItem('token');
       const res = await axios.post(
-        'http://localhost:5000/api/diary/image-generate',
+        `${baseURL}/api/diary/image-generate`,
         formData,
         {
           headers: { Authorization: `Bearer ${token}` },

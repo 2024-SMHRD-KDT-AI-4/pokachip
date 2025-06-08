@@ -25,6 +25,11 @@ const tagMessages = {
   accommodation: "머무는 공간의 분위기를 자주 남기셨어요."
 };
 
+const baseURL =
+  import.meta.env.MODE === "development"
+    ? import.meta.env.VITE_API_LOCAL
+    : import.meta.env.VITE_API_DEPLOY;
+
 function GalleryHome() {
   const navigate = useNavigate();
   const [summary, setSummary] = useState({});
@@ -37,7 +42,7 @@ function GalleryHome() {
     if (!user_id) return;
 
     axios
-      .get(`http://localhost:5000/api/gallery/summary?user_id=${user_id}`)
+      .get(`${baseURL}/api/gallery/summary?user_id=${user_id}`)
       .then((res) => {
         setSummary(res.data);
 
@@ -74,7 +79,7 @@ function GalleryHome() {
           <div className="w-2/5 h-full">
             {topTag.thumbnail ? (
               <img
-                src={`http://localhost:5000/uploads/${topTag.thumbnail}`}
+                src={`${baseURL}/uploads/${topTag.thumbnail}`}
                 alt={topTag.name}
                 className="w-full h-full object-cover"
               />
@@ -94,9 +99,8 @@ function GalleryHome() {
           const thumbnail = folder?.thumbnail;
           const count = folder?.count || 0;
 
-          const cardClass = `relative h-44 rounded-xl overflow-hidden cursor-pointer ${
-            idx % 2 === 1 ? 'translate-y-6' : ''
-          }`;
+          const cardClass = `relative h-44 rounded-xl overflow-hidden cursor-pointer ${idx % 2 === 1 ? 'translate-y-6' : ''
+            }`;
 
           return (
             <div
@@ -106,7 +110,7 @@ function GalleryHome() {
             >
               {thumbnail ? (
                 <img
-                  src={`http://localhost:5000/uploads/${thumbnail}`}
+                  src={`${baseURL}/uploads/${thumbnail}`}
                   alt={tag}
                   className="w-full h-full object-cover"
                 />

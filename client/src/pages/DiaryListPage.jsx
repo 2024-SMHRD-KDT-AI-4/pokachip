@@ -9,16 +9,21 @@ export default function DiaryListPage() {
   const [diaries, setDiaries] = useState([]);
   const navigate = useNavigate();
 
+  const baseURL =
+    import.meta.env.MODE === "development"
+      ? import.meta.env.VITE_API_LOCAL
+      : import.meta.env.VITE_API_DEPLOY;
+
   useEffect(() => {
     if (!isLoggedIn) return;
 
-    axios.get("https://pokachip.onrender.com/api/diary", {
+    axios.get(`${baseURL}/api/diary`, {
       headers: { Authorization: `Bearer ${token}` },
     })
-    .then((res) => setDiaries(res.data))
-    .catch((err) => {
-      console.error("일기 리스트 불러오기 실패:", err);
-    });
+      .then((res) => setDiaries(res.data))
+      .catch((err) => {
+        console.error("일기 리스트 불러오기 실패:", err);
+      });
   }, [isLoggedIn]);
 
   return (
@@ -48,7 +53,7 @@ export default function DiaryListPage() {
               title: d.diary_title,
               content: d.diary_content?.slice(0, 65) || '',
               image: d.file_name
-                ? `https://pokachip.onrender.com/uploads/${d.file_name}`
+                ? `${baseURL}/uploads/${d.file_name}`
                 : "/default.jpg",
             };
           })}

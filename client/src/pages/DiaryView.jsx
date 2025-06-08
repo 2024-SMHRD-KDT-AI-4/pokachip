@@ -13,11 +13,18 @@ function DiaryView() {
   const [photos, setPhotos] = useState([]);
   const [showModal, setShowModal] = useState(false); // 삭제 모달
 
+
+  const baseURL =
+    import.meta.env.MODE === "development"
+      ? import.meta.env.VITE_API_LOCAL
+      : import.meta.env.VITE_API_DEPLOY;
+
+
   useEffect(() => {
     async function fetchDiary() {
       try {
         const token = localStorage.getItem("token");
-        const res = await axios.get(`http://localhost:5000/api/diary/${id}`, {
+        const res = await axios.get(`${baseURL}/api/diary/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setDiary(res.data.diary);
@@ -40,7 +47,7 @@ function DiaryView() {
   const handleDeleteConfirm = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.delete(`http://localhost:5000/api/diary/${id}`, {
+      const res = await axios.delete(`${baseURL}/api/diary/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -89,7 +96,7 @@ function DiaryView() {
             {photos.map((photo, idx) => (
               <SwiperSlide key={idx}>
                 <img
-                  src={`http://localhost:5000/uploads/${photo.file_name}`}
+                  src={`${baseURL}/uploads/${photo.file_name}`}
                   alt={`diary-photo-${idx}`}
                   className="w-full h-full object-cover"
                 />

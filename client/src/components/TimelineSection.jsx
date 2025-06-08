@@ -5,6 +5,11 @@ import dayjs from 'dayjs';
 export default function TimelineSection() {
     const [timelineData, setTimelineData] = useState([]);
 
+    const baseURL =
+        import.meta.env.MODE === "development"
+            ? import.meta.env.VITE_API_LOCAL
+            : import.meta.env.VITE_API_DEPLOY;
+
     const userData = localStorage.getItem('user');
     let user_id = null;
 
@@ -19,7 +24,7 @@ export default function TimelineSection() {
     useEffect(() => {
         if (!user_id) return;
 
-        fetch(`https://pokachip.onrender.com/api/timeline?user_email=${user_id}`)
+        fetch(`${baseURL}/api/timeline?user_email=${user_id}`)
             .then((res) => res.json())
             .then((data) => {
                 const items = Array.isArray(data) ? data : Object.values(data);

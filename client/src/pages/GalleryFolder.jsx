@@ -21,11 +21,17 @@ function GalleryFolder() {
   const userData = localStorage.getItem('user');
   const user_id = userData ? JSON.parse(userData).user_id : null;
 
+
+  const baseURL =
+    import.meta.env.MODE === "development"
+      ? import.meta.env.VITE_API_LOCAL
+      : import.meta.env.VITE_API_DEPLOY;
+
   useEffect(() => {
     if (!user_id) return;
 
     axios
-      .get(`http://localhost:5000/api/gallery/${tag}?user_id=${user_id}`)
+      .get(`${baseURL}/api/gallery/${tag}?user_id=${user_id}`)
       .then((res) => setPhotos(res.data))
       .catch((err) => console.error('📛 사진 불러오기 실패:', err));
   }, [tag, user_id]);
@@ -49,7 +55,7 @@ function GalleryFolder() {
         {photos.map((photo, idx) => (
           <img
             key={idx}
-            src={`http://localhost:5000/uploads/${photo.file_name}`}
+            src={`${baseURL}uploads/${photo.file_name}`}
             alt={`img-${idx}`}
             className="w-full h-32 object-cover rounded cursor-pointer"
             onClick={() => {
