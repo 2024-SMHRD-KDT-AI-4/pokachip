@@ -14,11 +14,16 @@ function MainPage() {
     const { isLoggedIn, token } = useAuth();
     const [randomDiaries, setRandomDiaries] = useState([]);
     const [showLoginModal, setShowLoginModal] = useState(false);
+    const baseURL =
+        import.meta.env.MODE === "development"
+            ? import.meta.env.VITE_API_LOCAL
+            : import.meta.env.VITE_API_DEPLOY;
 
+ 
     useEffect(() => {
         if (isLoggedIn) {
             axios
-                .get("http://localhost:5000/api/diary/randomlist", {
+                .get(`${baseURL}/api/diary/randomlist`, {
                     headers: { Authorization: `Bearer ${token}` },
                 })
                 .then((res) => {
@@ -61,7 +66,7 @@ function MainPage() {
         const image = fileName
             ? fileName.startsWith("/")
                 ? fileName
-                : `http://localhost:5000/uploads/${fileName}`
+                : `${baseURL}/uploads/${fileName}`
             : "/default-image.jpg";
 
         const handleCardClick = () => {
@@ -102,9 +107,7 @@ function MainPage() {
 
     return (
         <div className="flex flex-col h-screen overflow-hidden bg-[#fff] max-w-full mx-auto px-2">
-            <div className="px-2 pt-6">
-                <h1 className="text-2xl font-bold text-gray-800">DIARY</h1>
-            </div>
+
 
             <main className="flex-1 overflow-y-scroll hide-scrollbar px-0 py-4 space-y-8">
                 {/* ✅ 랜덤 일기 카드 Swiper */}

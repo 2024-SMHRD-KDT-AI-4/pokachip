@@ -87,8 +87,8 @@ function RegisterPageInner() {
     flow: isMobile ? "auth-code" : "implicit",
     ...(isMobile && {
       redirect_uri: window.location.hostname === "localhost"
-        ? "http://localhost:5173/register"
-        : "https://tripd.netlify.app/register"
+        ? "http://localhost:5173/login"
+        : "https://tripd.netlify.app/login"
     }),
   });
 
