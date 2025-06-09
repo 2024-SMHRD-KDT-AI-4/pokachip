@@ -54,6 +54,7 @@ const generateDiaryFromImage = async (req, res) => {
       [user_id, diaryTitle, diaryContent, tripDateDB]
     );
     const diary_idx = dRes.insertId;
+    console.log("✅ DB INSERT 시작");
 
     for (let i = 0; i < imageFiles.length; i++) {
       const file = imageFiles[i];
@@ -62,30 +63,34 @@ const generateDiaryFromImage = async (req, res) => {
 
       const [pRes] = await conn.query(
         `INSERT INTO photo_info (user_id, file_name, exif_loc, taken_at, tags, lat, lng)
-         VALUES (?, ?, ?, ?, '', ?, ?)`,
-
+     VALUES (?, ?, ?, ?, '', ?, ?)`,
         [user_id, file.filename, locationInfo, takenAtToInsert, lat, lng]
       );
+      console.log("📸 photo_info 삽입 완료:", file.filename);
 
       const photo_idx = pRes.insertId;
 
       await conn.query(
         `INSERT INTO ai_diary_photos (diary_idx, photo_idx, created_at)
-         VALUES (?, ?, NOW())`,
-
+     VALUES (?, ?, NOW())`,
         [diary_idx, photo_idx]
       );
+      console.log("🔗 ai_diary_photos 연결 완료:", photo_idx);
     }
 
+    console.log("✅ DB 커밋 시작");
     await conn.commit();
     conn.release();
+    console.log("✅ DB 커밋 완료");
 
     try {
+      console.log("📡 Flask 분류 요청 시작:", `${FLASK_URL}/classify`);
       await axios.post(`${FLASK_URL}/classify`);
       console.log("✔️ Flask 서버로 분류 요청 전송 완료");
     } catch (err) {
       console.warn("❌ Flask 호출 실패:", err.message);
     }
+
 
     return res.json({ message: "일기 저장 완료", diary_idx, trip_date: tripDateStr });
   } catch (error) {
