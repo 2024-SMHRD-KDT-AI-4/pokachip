@@ -55,7 +55,7 @@ function GalleryFolder() {
         {photos.map((photo, idx) => (
           <img
             key={idx}
-            src={`${baseURL}uploads/${photo.file_name}`}
+            src={`${baseURL}/uploads/${photo.file_name}`}
             alt={`img-${idx}`}
             className="w-full h-32 object-cover rounded cursor-pointer"
             onClick={() => {
