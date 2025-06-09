@@ -41,7 +41,7 @@ function FooterNav() {
         <div className="relative bg-gray-100 shadow-md">
 
           {/* ✅ 중앙 파인 배경 */}
-          <div className="absolute inset-x-0 -top-2 flex justify-center z-0 pointer-events-none">
+          <div className="absolute inset-x-0 flex justify-center z-0 pointer-events-none">
             <div
               className="bg-white pointer-events-none"  // 여기에 추가!
               style={{
@@ -54,7 +54,7 @@ function FooterNav() {
           </div>
 
           {/* ✅ 중앙 파스텔 버튼 */}
-          <div className="absolute inset-x-0 -top-10 flex justify-center z-10">
+          <div className="absolute inset-x-0 -top-8 flex justify-center z-10">
             <button
               onClick={() => handleClick("/diarylist")}
               className={`w-16 h-16 rounded-full shadow-lg flex items-center justify-center text-3xl transition duration-300 ${location.pathname === "/diarylist"
