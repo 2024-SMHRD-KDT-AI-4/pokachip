@@ -39,11 +39,10 @@ function FooterNav() {
       {/* ✅ 푸터 */}
       <nav className="fixed bottom-0 w-full z-50">
         <div className="relative bg-gray-100 shadow-md">
-
           {/* ✅ 중앙 파인 배경 */}
-          <div className="absolute inset-x-0 flex justify-center z-0 pointer-events-none">
+          <div className="absolute inset-x-0 flex justify-center -z-0 pointer-events-none">
             <div
-              className="bg-white pointer-events-none"  // 여기에 추가!
+              className="bg-white pointer-events-none"
               style={{
                 width: "80px",
                 height: "40px",
@@ -54,13 +53,16 @@ function FooterNav() {
           </div>
 
           {/* ✅ 중앙 파스텔 버튼 */}
-          <div className="absolute inset-x-0 -top-8 flex justify-center z-10">
+          {/* 수정: 아래 div에 pointer-events-none을 추가하여 클릭 이벤트가 통과되도록 함 */}
+          <div className="absolute inset-x-0 -top-8 flex justify-center z-10 pointer-events-none">
             <button
               onClick={() => handleClick("/diarylist")}
-              className={`w-16 h-16 rounded-full shadow-lg flex items-center justify-center text-3xl transition duration-300 ${location.pathname === "/diarylist"
-                ? "bg-white text-sky-400"
-                : "bg-sky-300 text-white hover:bg-sky-400"
-                }`}
+              /* 수정: 버튼 자체는 클릭이 되어야 하므로 pointer-events-auto를 추가 */
+              className={`pointer-events-auto w-16 h-16 rounded-full shadow-lg flex items-center justify-center text-3xl transition duration-300 ${
+                location.pathname === "/diarylist"
+                  ? "bg-white text-sky-400"
+                  : "bg-sky-300 text-white hover:bg-sky-400"
+              }`}
             >
               <RiBook2Line />
             </button>
@@ -105,7 +107,9 @@ function FooterNav() {
       {showModal && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-30">
           <div className="bg-white p-6 rounded-xl shadow-md text-center w-80">
-            <p className="text-lg font-semibold mb-4">로그인이 필요한 기능입니다.</p>
+            <p className="text-lg font-semibold mb-4">
+              로그인이 필요한 기능입니다.
+            </p>
             <div className="flex justify-center gap-4">
               <button
                 className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded"
