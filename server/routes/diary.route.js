@@ -14,7 +14,6 @@ const {
 } = require("../controllers/diary.controller");
 
 const authenticateToken = require("../middleware/authenticateToken");
-
 // Multer 셋업 (최대 5장)
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, path.join(__dirname, "../uploads")),
@@ -42,5 +41,7 @@ router.delete("/:id", authenticateToken, deleteDiary);
 
 // ✅ 7) 타임라인 조회 (user_email 기반)
 router.get("/timeline", getTimelineByUser);
+
+
 
 module.exports = router;
