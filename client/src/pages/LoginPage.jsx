@@ -19,7 +19,7 @@ const baseURL =
 const loginToBackend = async (userInfo, login, navigate, setError) => {
   try {
     const res = await axios.post(
-      `$${baseURL}/api/login`,
+      `${baseURL}/api/login`,
       userInfo,
       { headers: { "Content-Type": "application/json" } }
     );
