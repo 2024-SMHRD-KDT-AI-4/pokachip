@@ -37,24 +37,31 @@ const extractExifData = async (imageFiles) => {
       const parser = ExifParser.create(imageBuffer);
       const result = parser.parse();
 
-      // ✅ 날짜 추출 (EXIF 포맷 보정 없이 그대로)
+      // ✅ 1. 날짜 추출 (EXIF timestamp 그대로 → UTC 기준 → 문자열로 변환)
       if (result.tags.DateTimeOriginal) {
-        const raw = result.tags.DateTimeOriginal; // ex: 2025:02:13 23:30:00
-        const formatted = raw.replace(/^(\d{4}):(\d{2}):(\d{2})/, "$1-$2-$3");
-        taken_at = formatted + ":00"; // 'YYYY-MM-DD HH:mm:00'
-        dateList.push(new Date(taken_at));
+        const exifTimestamp = result.tags.DateTimeOriginal * 1000; // ms 단위
+        const exifDateUTC = new Date(exifTimestamp); // UTC 기준
+        const YYYY = exifDateUTC.getUTCFullYear();
+        const MM = String(exifDateUTC.getUTCMonth() + 1).padStart(2, "0");
+        const DD = String(exifDateUTC.getUTCDate()).padStart(2, "0");
+        const hh = String(exifDateUTC.getUTCHours()).padStart(2, "0");
+        const mm = String(exifDateUTC.getUTCMinutes()).padStart(2, "0");
+        const ss = String(exifDateUTC.getUTCSeconds()).padStart(2, "0");
+        taken_at = `${YYYY}-${MM}-${DD} ${hh}:${mm}:${ss}`;
+
+        dateList.push(new Date(taken_at)); // (보정 없이 push)
       }
 
-      // ✅ GPS 추출
+      // ✅ 2. GPS 추출
       if (result.tags.GPSLatitude && result.tags.GPSLongitude) {
         lat = parseFloat(result.tags.GPSLatitude);
         lng = parseFloat(result.tags.GPSLongitude);
       }
 
-      // ✅ DB용 GPS 정보 push (이제 taken_at 포함!)
+      // ✅ 3. DB용 GPS 정보 push
       gpsList.push({ lat, lng, taken_at });
 
-      // ✅ GPT 프롬프트용 위치정보 (주소 변환)
+      // ✅ 4. GPT 프롬프트용 위치정보
       if (lat && lng) {
         const placeName = await reverseGeocode(lat, lng);
         if (placeName) locationList.push(placeName);
@@ -64,7 +71,7 @@ const extractExifData = async (imageFiles) => {
       gpsList.push({ lat: null, lng: null, taken_at: null });
     }
 
-    // ✅ GPT 이미지 분석용 base64
+    // ✅ 5. GPT 이미지 분석용 base64
     imageMessages.push({
       type: "image_url",
       image_url: {
