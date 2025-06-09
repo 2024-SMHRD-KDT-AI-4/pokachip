@@ -43,7 +43,7 @@ function FooterNav() {
           {/* ✅ 중앙 파인 배경 */}
           <div className="absolute inset-x-0 -top-2 flex justify-center z-0 pointer-events-none">
             <div
-              className="bg-white"
+              className="bg-white pointer-events-none"  // 여기에 추가!
               style={{
                 width: "80px",
                 height: "40px",
@@ -58,8 +58,8 @@ function FooterNav() {
             <button
               onClick={() => handleClick("/diarylist")}
               className={`w-16 h-16 rounded-full shadow-lg flex items-center justify-center text-3xl transition duration-300 ${location.pathname === "/diarylist"
-                  ? "bg-white text-sky-400"
-                  : "bg-sky-300 text-white hover:bg-sky-400"
+                ? "bg-white text-sky-400"
+                : "bg-sky-300 text-white hover:bg-sky-400"
                 }`}
             >
               <RiBook2Line />
