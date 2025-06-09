@@ -11,10 +11,15 @@ const initKakao = () => {
   }
 };
 
+const baseURL =
+  window.location.hostname === "localhost"
+    ? import.meta.env.VITE_API_LOCAL
+    : import.meta.env.VITE_API_DEPLOY;
+
 const loginToBackend = async (userInfo, login, navigate, setError) => {
   try {
     const res = await axios.post(
-      `${import.meta.env.VITE_API_LOCAL}/api/login`,
+      `$${baseURL}/api/login`,
       userInfo,
       { headers: { "Content-Type": "application/json" } }
     );
@@ -54,7 +59,7 @@ function LoginPageInner() {
         if (isMobile) {
           // 💥 수정: 백엔드에 code와 함께 redirectUri를 전달합니다.
           const res = await axios.post(
-            `${import.meta.env.VITE_API_LOCAL}/api/google-token`,
+            `${baseURL}/api/google-token`,
             {
               code: tokenResponse.code,
               redirect_uri: redirectUri,

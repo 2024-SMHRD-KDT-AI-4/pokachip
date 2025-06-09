@@ -11,9 +11,15 @@ const initKakao = () => {
   }
 };
 
+const baseURL =
+  window.location.hostname === "localhost"
+    ? import.meta.env.VITE_API_LOCAL
+    : import.meta.env.VITE_API_DEPLOY;
+
+
 const registerToBackend = async (userInfo, navigate, setError) => {
   try {
-    const res = await axios.post(`${import.meta.env.VITE_API_LOCAL}/api/register`, userInfo, {
+    const res = await axios.post(`${baseURL}/api/register`, userInfo, {
       headers: { 'Content-Type': 'application/json' },
     });
 
