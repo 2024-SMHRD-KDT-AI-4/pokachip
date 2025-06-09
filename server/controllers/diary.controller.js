@@ -6,6 +6,13 @@ const { extractExifData } = require("../utils/exifUtil");
 const { buildPrompt } = require("../utils/promptBuilder");
 const { callGPT } = require("../services/gptService");
 
+
+const FLASK_URL =
+  process.env.NODE_ENV === "production"
+    ? process.env.FLASK_DEPLOY_URL
+    : process.env.FLASK_URL;
+
+
 const generateDiaryFromImage = async (req, res) => {
   const user_id = req.user?.user_id || req.body.user_id;
   const { companion, feeling, length, tone, weather } = req.body;
@@ -74,7 +81,7 @@ const generateDiaryFromImage = async (req, res) => {
     conn.release();
 
     try {
-      await axios.post("http://localhost:6006/classify");
+      await axios.post(`${FLASK_URL}/classify`);
       console.log("✔️ Flask 서버로 분류 요청 전송 완료");
     } catch (err) {
       console.warn("❌ Flask 호출 실패:", err.message);
