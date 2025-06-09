@@ -2,7 +2,6 @@ const fs = require("fs");
 const path = require("path");
 const axios = require("axios");
 const ExifParser = require("exif-parser");
-const dayjs = require("dayjs");
 require("dotenv").config();
 
 // ✅ 위도·경도로 장소명 변환 (Google Maps API)
@@ -38,10 +37,11 @@ const extractExifData = async (imageFiles) => {
       const parser = ExifParser.create(imageBuffer);
       const result = parser.parse();
 
-      // ✅ 날짜 추출 → MySQL 형식으로 taken_at 저장
+      // ✅ 날짜 추출 (EXIF 포맷 보정 없이 그대로)
       if (result.tags.DateTimeOriginal) {
-        const timestamp = result.tags.DateTimeOriginal; // EXIF는 초 단위
-        taken_at = dayjs.unix(timestamp).format("YYYY-MM-DD HH:mm:ss");
+        const raw = result.tags.DateTimeOriginal; // ex: 2025:02:13 23:30:00
+        const formatted = raw.replace(/^(\d{4}):(\d{2}):(\d{2})/, "$1-$2-$3");
+        taken_at = formatted + ":00"; // 'YYYY-MM-DD HH:mm:00'
         dateList.push(new Date(taken_at));
       }
 
