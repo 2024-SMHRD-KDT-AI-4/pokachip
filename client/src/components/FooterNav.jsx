@@ -7,7 +7,7 @@ import {
   RiImageAddLine,
   RiMapPinLine,
   RiUserSmileLine,
-  RiBook2Line, // 중앙 버튼 아이콘
+  RiBook2Line,
 } from "react-icons/ri";
 
 function FooterNav() {
@@ -16,11 +16,15 @@ function FooterNav() {
   const { isLoggedIn } = useAuth();
 
   const [showModal, setShowModal] = useState(false);
+  const [diaryClicked, setDiaryClicked] = useState(false); // ✅ 중앙 버튼 클릭 상태
 
   const handleClick = (path, requireLogin = true) => {
     if (requireLogin && !isLoggedIn) {
       setShowModal(true);
       return;
+    }
+    if (path === "/diarylist") {
+      setDiaryClicked(true); // ✅ 클릭 상태 변경
     }
     navigate(path);
   };
@@ -53,7 +57,10 @@ function FooterNav() {
           <div className="absolute inset-x-0 -top-10 flex justify-center z-10">
             <button
               onClick={() => handleClick("/diarylist")}
-              className="w-16 h-16 rounded-full bg-sky-300 hover:bg-sky-400 text-white text-3xl shadow-lg flex items-center justify-center"
+              className={`w-16 h-16 rounded-full shadow-lg flex items-center justify-center text-3xl transition duration-300 ${location.pathname === "/diarylist"
+                  ? "bg-white text-sky-400"
+                  : "bg-sky-300 text-white hover:bg-sky-400"
+                }`}
             >
               <RiBook2Line />
             </button>

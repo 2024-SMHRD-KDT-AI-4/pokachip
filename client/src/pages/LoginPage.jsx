@@ -14,7 +14,7 @@ const initKakao = () => {
 const loginToBackend = async (userInfo, login, navigate, setError) => {
   try {
     const res = await axios.post(
-      `${import.meta.env.VITE_API_URL}/api/login`,
+      `${import.meta.env.VITE_API_LOCAL}/api/login`,
       userInfo,
       { headers: { "Content-Type": "application/json" } }
     );
@@ -54,7 +54,7 @@ function LoginPageInner() {
         if (isMobile) {
           // 💥 수정: 백엔드에 code와 함께 redirectUri를 전달합니다.
           const res = await axios.post(
-            `${import.meta.env.VITE_API_URL}/api/google-token`,
+            `${import.meta.env.VITE_API_LOCAL}/api/google-token`,
             {
               code: tokenResponse.code,
               redirect_uri: redirectUri,

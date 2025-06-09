@@ -13,7 +13,7 @@ const initKakao = () => {
 
 const registerToBackend = async (userInfo, navigate, setError) => {
   try {
-    const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/register`, userInfo, {
+    const res = await axios.post(`${import.meta.env.VITE_API_LOCAL}/api/register`, userInfo, {
       headers: { 'Content-Type': 'application/json' },
     });
 
@@ -48,7 +48,7 @@ function RegisterPageInner() {
       try {
         if (isMobile) {
           // 💥 수정: 백엔드에 code와 함께 올바른 redirectUri를 전달합니다.
-          const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/google-token`, {
+          const res = await axios.post(`${import.meta.env.VITE_API_LOCAL}/api/google-token`, {
             code: tokenResponse.code,
             redirect_uri: redirectUri, 
           });

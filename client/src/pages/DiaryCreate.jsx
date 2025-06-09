@@ -128,7 +128,7 @@ function DiaryCreate() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white via-blue-50 to-blue-100 px-4 py-8 pt-28 max-w-[420px] mx-auto">
+    <div className="min-h-screen bg-white px-4 py-8 pt-28 max-w-[420px] mx-auto">
 
       {/* 🔝 상단 고정 영역: 뒤로가기 + 로고 */}
       <div className="fixed top-0 left-0 w-full bg-white z-50">
